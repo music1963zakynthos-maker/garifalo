@@ -40,22 +40,43 @@
             bottom: 15px;
             left: 15px;
             z-index: 9999;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6); /* Ελαφρώς πιο σκούρο για να ξεχωρίζει */
             color: white;
             border: none;
-            padding: 8px 15px;
+            padding: 10px 18px; /* Λίγο περισσότερο padding για ομορφιά */
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
-            opacity: 0.7;
-            transition: opacity 0.3s;
+            opacity: 1; /* Το αφήνουμε στο 1 για να φαίνεται καθαρά η "αναπνοή" */
+            transition: opacity 0.3s, background 0.3s;
+            
+            /* Εδώ ενεργοποιείται το εφέ αναπνοής και αιώρησης */
+            animation: breathe 3s ease-in-out infinite;
         }
-        .switch-btn:hover { opacity: 1; }
+        
+        .switch-btn:hover { 
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        /* Το CSS Animation για το εφέ "αναπνοής" (Breathe Effect) */
+        @keyframes breathe {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+            }
+            50% {
+                transform: scale(1.06); /* Μεγαλώνει ελαφρώς (αιώρηση) */
+                box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2); /* Βγάζει μια απαλή λάμψη */
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Προσθήκη scrolling="no" για να μην εμφανίζονται μπάρες -->
     <iframe id="chatFrame" src="player-1.html" class="fullscreen-iframe" scrolling="no"></iframe>
     
     <button id="switchBtn" class="switch-btn" onclick="toggleChat()">radio synnefa live</button>
