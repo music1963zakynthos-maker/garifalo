@@ -15,10 +15,40 @@
 <meta property="og:url" content="https://white-lab-f071.radiotvlive.workers.dev/">
 <link rel="icon" href="favicon.png" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
-
 <style>
-  body{margin:0;font-family:Segoe UI,Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden;background:100% 100%}
- 
+/* 1. Η body πρέπει να επιτρέπει την κύλιση αν το παράθυρο γίνει πολύ μικρό */
+body {
+  margin: 0;
+  font-family: Segoe UI, Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto; /* Επιτρέπει τη μπάρα όταν το παράθυρο είναι μικρό */
+  overflow-x: hidden;
+}
+
+/* 2. Η "Neon" Scrollbar που ζήτησες */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(20, 20, 20, 0.8);
+  border-left: 1px solid rgba(0, 255, 204, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00ffcc;
+  border-radius: 3px;
+  box-shadow: 0 0 8px #00ffcc, 0 0 15px rgba(0, 255, 204, 0.6);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ff99;
+  box-shadow: 0 0 12px #00ff99, 0 0 20px rgba(0, 255, 204, 0.8);
+}
+
   #loadingModal {
     display: none;
     position: fixed;
@@ -44,14 +74,11 @@
     align-items: center;
     gap: 20px;
   }
- 
   @keyframes pulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
   }
-
-  /* Ο ΚΥΚΛΟΣ ΠΟΥ ΓΥΡΙΖΕΙ (SPINNER) ΑΠΟ ΤΟΝ ΔΕΥΤΕΡΟ ΚΩΔΙΚΑ */
   .spinner {
     width: 40px;
     height: 40px;
@@ -60,7 +87,6 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
-
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -73,10 +99,10 @@
     position:absolute;top:40px;z-index:5;
     transition:transform .12s linear;
     text-shadow:0 0 8px #00ffcc;font-weight:bold;padding-bottom:10px;
-    --glow-h: 174; 
+    --glow-h: 174;
     --glow-size: 20px;
     border: 4px solid hsl(var(--glow-h), 100%, 50%);
-    box-shadow: 0 0 var(--glow-size) hsla(var(--glow-h), 100%, 50%, 0.8), 
+    box-shadow: 0 0 var(--glow-size) hsla(var(--glow-h), 100%, 50%, 0.8),
                 0 0 calc(var(--glow-size) / 2) hsla(var(--glow-h), 100%, 70%, 1);
   }
 
@@ -97,16 +123,15 @@
     font-size: 13px; align-items: center; justify-content: center;
     box-shadow: 0 0 15px rgba(255, 204, 0, 0.4); transition: 0.3s;
   }
- 
   #skipIntroBtn:hover { background: #ffcc00; color: #000; box-shadow: 0 0 20px #ffcc00; }
- 
+
   #status{position:absolute;top:270px;font-weight:700;letter-spacing:1px;font-size:30px; z-index:6;}
   .onair{color:#00ff99;text-shadow:0 0 10px #00ff99}
   .offair{color:#ff6600;text-shadow:0 0 12px #ff6600}
   .loading{color:#ffaa00;text-shadow:0 0 10px #ffaa00}
- 
+
   #equalizer{position:absolute;bottom:0;width:100%;height:100vh;z-index:1}
- 
+  
   #nowPlaying {
     position: absolute;
     top: 390px;
@@ -131,7 +156,6 @@
     padding-left: 100%;
     animation: marquee 15s linear infinite;
   }
-
   @keyframes marquee {
     0% { transform: translate3d(0, 0, 0); }
     100% { transform: translate3d(-100%, 0, 0); }
@@ -141,10 +165,8 @@
     display: inline-block;
     width: 100%;
     text-align: center;
-    /* ΑΛΛΑΓΗ ΣΕ ease-in-out ΑΠΟ ΤΟΝ ΔΕΥΤΕΡΟ ΚΩΔΙΚΑ */
     animation: floatTitle 3s ease-in-out infinite alternate;
   }
-
   @keyframes floatTitle {
     from { transform: translateY(0px); opacity: 0.9; }
     to { transform: translateY(-5px); opacity: 1; }
@@ -154,7 +176,7 @@
     position: absolute;top: 330px;left: 50%;transform: translateX(-50%);
     display: flex;align-items: center;gap: 10px;z-index: 5;
   }
-  #volumeSlider {Width: 250px;height: 5px;appearance: none;background: #333;border-radius: 5px;outline: none;box-shadow: 0 0 10px #00ffcc;}
+  #volumeSlider {width: 250px;height: 5px;appearance: none;background: #333;border-radius: 5px;outline: none;box-shadow: 0 0 10px #00ffcc;}
   #volumeSlider::-webkit-slider-thumb {appearance: none;width: 18px;height: 18px;border-radius: 50%;background: #00ffcc;cursor: pointer;box-shadow: 0 0 10px #00ffcc;}
   #volumeValue {font-size: 18px;color: #00ffcc;text-shadow: 0 0 8px #00ffcc;width: 50px;text-align: left;}
 
@@ -165,54 +187,51 @@
     color: #00ffcc; cursor: pointer; font-weight: bold; z-index: 100;
     box-shadow: 0 0 15px #00ffcc; display: flex; align-items: center; justify-content: center;
   }
+
   body::after {content: "";position: fixed;top: 0;left: 0;width: 100%;height: 100%;background-color: rgba(0, 0, 0, 0.7);z-index: -1;}
-    body {
- background-image: url('fonto.jpg');
- background-repeat: no-repeat;
- background-attachment: fixed; 
- background-size: 100% 100%;
-}
+  
+  body {
+    background-image: url('fonto.jpg');
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: 100% 100%;
+  }
+
+  @media (max-width: 680px) {
+    body { overflow-y: scroll; }
+  }
 </style>
 </head>
 <body>
-
 <div id="loadingModal">
   <div class="modal-content">
     <div id="modalText">Φόρτωση...</div>
-    <!-- ΠΡΟΣΘΗΚΗ ΤΟΥ SPINNER HTML ΑΠΟ ΤΟΝ ΔΕΥΤΕΡΟ ΚΩΔΙΚΑ -->
     <div class="spinner"></div>
   </div>
 </div>
-
 <canvas id="equalizer"></canvas>
 <div class="player-btn" id="visualizerCircle"></div>
 <div id="playBtn">Play</div>
 <div id="skipIntroBtn">Παράλειψη Intro</div>
-
 <div id="status" class="offair">Πάτησε Play</div>
 <div id="nowPlaying"><span class="static-text">Radio Synnefa Live</span></div>
-
 <div id="volumeControl">
   <input type="range" id="volumeSlider" min="0" max="100" value="100">
   <span id="volumeValue">100%</span>
 </div>
-
 <div id="effectBtn">Bars</div>
 
-<script>                        
+<script>
 const STREAMS = {
   live: { name: "ΚΥΡΙΟΣ ΣΕΡΒΕΡ", streamUrl: "https://freestream.hu:8340/trela233", statusUrl: "https://freestream.hu:8340/status-json.xsl?mount=/trela233" },
   backup: { name: "BACKUP ΣΕΡΒΕΡ", streamUrl: "https://radio.nitro-server.uk/listen/radiotrela/radio.mp3", statusUrl: "https://radio.nitro-server.uk/api/nowplaying/radiotrela" }
 };
-
 const INTRO_URL = "https://zantetrelos-cpu.github.io/radiotrela/%CE%A1%CE%AC%CE%B4%CE%B9%CE%BF%20%CE%A3%CF%8D%CE%BD%CE%BD%CE%B5%CF%86%CE%B1.mp3";
 const originalRadioName = "Radio Synnefa LIVE";
-
 let audio = new Audio(); audio.crossOrigin = "anonymous";
 let audioCtx, analyser, dataArray, bufferLength, sourceNode;
 let isPlaying = false, isLive = true, retryIntervalMs = 60000;
 let isIntroActive = false, hasIntroPlayed = false;
-
 const btn = document.getElementById('playBtn');
 const skipBtn = document.getElementById('skipIntroBtn');
 const visualizerCircle = document.getElementById('visualizerCircle');
@@ -284,12 +303,10 @@ const effects = [
       const centerY = h / 2;
       const baseRadius = Math.min(centerX, centerY) * 0.1;
       const maxRadius = Math.min(centerX, centerY) * 1.5;
-
       for (let i = 0; i < bufferLength; i += 2) {
           const value = data[i];
           const radius = baseRadius + (maxRadius - baseRadius) * (value / 255);
           const hue = (i * 10) % 360;
-          
           ctx.beginPath();
           ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
           ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.1)`;
@@ -300,17 +317,13 @@ const effects = [
   (ctx, data, w, h) => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
       ctx.fillRect(0, 0, w, h);
-      
       ctx.beginPath();
       ctx.moveTo(0, h / 2);
-      
       const sliceWidth = w * 1.0 / bufferLength;
       let x = 0;
-
       for (let i = 0; i < bufferLength; i++) {
           const value = data[i];
-          const y = (value / 128.0) * (h / 4) + (h / 2); 
-          
+          const y = (value / 128.0) * (h / 4) + (h / 2);
           if (i === 0) {
               ctx.moveTo(x, y);
           } else {
@@ -318,14 +331,11 @@ const effects = [
           }
           x += sliceWidth;
       }
-      
       ctx.lineTo(canvas.width, canvas.height / 2);
-      
       let total = 0;
       for(let i=0; i<bufferLength; i++) total += data[i];
       const avg = total / bufferLength;
       const hue = (avg * 2) % 360;
-      
       ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.8)`;
       ctx.lineWidth = 3;
       ctx.shadowBlur = 10;
@@ -336,26 +346,19 @@ const effects = [
   (ctx, data, w, h) => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
       ctx.fillRect(0, 0, w, h);
-
       const centerX = w / 2;
       const centerY = h / 2;
-      
       for(let i=0; i<bufferLength; i += 4) {
           const value = data[i];
           const angle = (i / bufferLength) * Math.PI * 2;
           const time = Date.now() * 0.001;
-          
           const distance = 100 + value * (2 + Math.sin(time + i*0.1));
-          
           const x = centerX + Math.cos(angle) * distance;
           const y = centerY + Math.sin(angle) * distance;
-          
           const size = 2 + value / 20;
           const hue = (i * 15 + time * 50) % 360;
-          
           ctx.beginPath();
           ctx.arc(x, y, size, 0, Math.PI * 2);
-          
           ctx.fillStyle = `hsla(${hue}, 100%, 70%, 0.6)`;
           ctx.shadowBlur = size * 2;
           ctx.shadowColor = `hsla(${hue}, 100%, 70%, 0.4)`;
@@ -407,8 +410,7 @@ function updateUIWithTitle(titleText) {
 }
 
 async function fetchTitle() {
-  if(isIntroActive) return; 
-  
+  if(isIntroActive) return;
   if (isLive) {
     const url = STREAMS.live.statusUrl;
     try {
@@ -423,7 +425,6 @@ async function fetchTitle() {
       updateUIWithTitle(title);
     } catch(e) { updateUIWithTitle(originalRadioName); }
   } else {
-    // NITRO BACKUP TITLE FETCH (Διατηρήθηκε η παλιά δομή)
     try {
       const r = await fetch(STREAMS.backup.statusUrl + "?t=" + Date.now());
       const data = await r.json();
@@ -437,12 +438,12 @@ async function fetchTitle() {
 function startAutoRetry(){
   if(window._playerRetryInterval) return;
   window._playerRetryInterval = setInterval(async () => {
-    if(!isPlaying || isIntroActive) return; 
+    if(!isPlaying || isIntroActive) return;
     if(!isLive){
       const test = new Audio(); test.crossOrigin = "anonymous"; test.src = STREAMS.live.streamUrl;
-      try{ 
-        await test.play(); test.pause(); test.src = ""; 
-        playStream(STREAMS.live.streamUrl, true); 
+      try{
+        await test.play(); test.pause(); test.src = "";
+        playStream(STREAMS.live.streamUrl, true);
       } catch(e){}
     }
   }, retryIntervalMs);
@@ -452,32 +453,24 @@ async function playStream(url, live=true){
   isIntroActive = false;
   skipBtn.style.display = "none";
   audio.pause(); audio.src = ""; isLive = live;
-  
-  // Διατηρήθηκαν τα αρχικά κείμενα δομής
   modalText.textContent = live ? "Φόρτωση live streaming" : "Σύνδεση με Backup Server...";
   loadingModal.style.display = "flex";
   statusEl.textContent = live ? "Φόρτωση Live Streaming" : "Φόρτωση Backup...";
-  statusEl.className = "loading"; 
-  
+  statusEl.className = "loading";
   audio.src = url;
   try {
     await audio.play();
     loadingModal.style.display = "none";
     statusEl.textContent = live ? "ON AIR Radio Synnefa" : " ON AIR (Backup)";
     statusEl.className = live ? "onair" : "offair";
-    
-    setTimeout(() => {
-        fetchTitle();
-    }, 2000);
-
+    setTimeout(() => { fetchTitle(); }, 2000);
   } catch(e){
     if(live) {
-        console.log("Live stream failed, trying backup...");
         playStream(STREAMS.backup.streamUrl, false);
-    } else { 
+    } else {
         loadingModal.style.display = "none";
-        statusEl.textContent = "Offline"; 
-        statusEl.className = "offair"; 
+        statusEl.textContent = "Offline";
+        statusEl.className = "offair";
     }
   }
 }
@@ -503,7 +496,7 @@ let rotation = 0;
 function rotateButton(){
   if(isPlaying){
     rotation += 0.2;
-    visualizerCircle.style.transform = `scale(1.0) rotate(${rotation}deg)`; 
+    visualizerCircle.style.transform = `scale(1.0) rotate(${rotation}deg)`;
   }
   requestAnimationFrame(rotateButton);
 }
@@ -512,7 +505,7 @@ requestAnimationFrame(rotateButton);
 btn.addEventListener('click', () => {
   if(isPlaying){
     audio.pause();
-    btn.textContent = "Play"; statusEl.textContent = "Παύση"; statusEl.className = "offair"; 
+    btn.textContent = "Play"; statusEl.textContent = "Παύση"; statusEl.className = "offair";
     isPlaying = false;
     skipBtn.style.display = "none";
     loadingModal.style.display = "none";
@@ -530,31 +523,28 @@ btn.addEventListener('click', () => {
 
 skipBtn.addEventListener('click', () => { playStream(STREAMS.live.streamUrl, true); });
 
-audio.addEventListener('error', () => { 
+audio.addEventListener('error', () => {
     if(isIntroActive) playStream(STREAMS.live.streamUrl, true);
-    else if(isLive) playStream(STREAMS.backup.streamUrl, false); 
+    else if(isLive) playStream(STREAMS.backup.streamUrl, false);
 });
 
-audio.addEventListener('ended', () => { 
-    if(isIntroActive) playStream(STREAMS.live.streamUrl, true); 
-    else if(isLive) playStream(STREAMS.backup.streamUrl, false); 
+audio.addEventListener('ended', () => {
+    if(isIntroActive) playStream(STREAMS.live.streamUrl, true);
+    else if(isLive) playStream(STREAMS.backup.streamUrl, false);
 });
 
 setInterval(() => { if(isPlaying && !isIntroActive) fetchTitle(); }, 15000);
 
 let _breathRunning = false;
 let lastLevel = 0;
-
 function startButtonBreath(){
   if(_breathRunning) return;
   _breathRunning = true;
-  
   function step(){
     let boost = 0;
     let targetGlow = 0;
     let musicHue = 174;
-    
-    if(analyser && dataArray && isPlaying && !audio.paused && (effectNames[currentEffect] !== "OFF")){ 
+    if(analyser && dataArray && isPlaying && !audio.paused && (effectNames[currentEffect] !== "OFF")){
         analyser.getByteFrequencyData(dataArray);
         let bassSum = 0;
         for (let i = 0; i < 10; i++) bassSum += dataArray[i];
@@ -563,9 +553,9 @@ function startButtonBreath(){
         musicHue = Math.floor(174 + colorOscillation) % 360;
         let currentLevel = averageBass / 255;
         let delta = currentLevel - lastLevel;
-        if (delta < 0) delta = 0; 
-        lastLevel = currentLevel; 
-        boost = Math.min(delta * 5, 0.4); 
+        if (delta < 0) delta = 0;
+        lastLevel = currentLevel;
+        boost = Math.min(delta * 5, 0.4);
         targetGlow = Math.min(2.0, averageBass / 50);
         visualizerCircle.style.setProperty('--glow-size', Math.round(targetGlow * 130) + "px");
         visualizerCircle.style.setProperty('--glow-h', musicHue);
