@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="el">
 <head>
 <meta charset="utf-8">
@@ -15,277 +15,28 @@
 <meta property="og:url" content="https://white-lab-f071.radiotvlive.workers.dev/">
 <link rel="icon" href="favicon.png" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
-<style>
-    html, body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        font-family: sans-serif;
-        background-color: #000000;
-        height: 100vh;
-        width: 100vw;
+   <style>
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    iframe { width: 100%; height: 100%; border: none; }
+
+    body {
+        /* 6 δευτερόλεπτα για να είναι αργή και στρωτή η κίνηση */
+        animation: flipSlow 6s ease-in-out forwards;
+        transform-origin: center;
+        perspective: 1000px;
     }
-   
-    .theater-container {
-        position: relative;
-        width: 100%;
-        height: 100vh;
-        perspective: 1200px;
-        overflow: hidden;
-        background: linear-gradient(135deg, #1a0007, #4a0e17, #1f0322, #0d000f);
-        background-size: 800% 800%;
-        animation: gradientBG 10s ease infinite;
-    }
-    #particles-canvas {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 10000;
-        transition: opacity 1.2s ease-out;
-    }
-    .curtain {
-        position: absolute;
-        top: 0;
-        width: 50%;
-        height: 100%;
-        z-index: 9999;
-        overflow: hidden;
-        transition: transform 4.5s cubic-bezier(0.42, 0, 0.58, 1),
-                    opacity 4.5s cubic-bezier(0.42, 0, 0.58, 1),
-                    visibility 4.5s;
-    }
-    .curtain-left { left: 0; transform-origin: left center; }
-    .curtain-right { right: 0; transform-origin: right center; }
-    .curtain-content {
-        position: absolute;
-        top: 0;
-        width: 200%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        align-items: center;
-        box-sizing: border-box;
-        padding: 40px 15px;
-    }
-    .curtain-left .curtain-content { left: 0; }
-    .curtain-right .curtain-content { right: 0; }
-    .theater-container.open .curtain-left {
-        transform: rotateY(-90deg);
-        opacity: 0;
-        visibility: hidden;
-    }
-    .theater-container.open .curtain-right {
-        transform: rotateY(90deg);
-        opacity: 0;
-        visibility: hidden;
-    }
-    #radio-player {
-        width: 100%; height: 100vh; border: none;
-        position: absolute; top: 0; left: 0; z-index: 1;
-        opacity: 0;
-        filter: brightness(0.1);
-        transform: scale(0.05) translateZ(-1500px) rotateX(360deg) rotateY(540deg) rotateZ(540deg);
-        transition: transform 5s cubic-bezier(0.2, 0.8, 0.2, 1),
-                    opacity 4.5s ease-out,
-                    filter 4.5s ease-out;
-    }
-    .theater-container.open #radio-player {
-        opacity: 1;
-        filter: brightness(1);
-        transform: scale(1) translateZ(0) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
-    }
-    @keyframes gradientBG {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    .curtain-content img {
-        width: auto; max-width: 90%; height: auto; max-height: 45vh;
-        object-fit: contain; z-index: 2;
-        filter: drop-shadow(0 0 20px rgba(255, 20, 147, 0.6));
-        animation: pulseLogo 2.5s ease-in-out infinite;
-    }
-    @keyframes pulseLogo {
-        0% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(255, 20, 147, 0.5)); }
-        50% { transform: scale(1.03); filter: drop-shadow(0 0 30px rgba(255, 20, 147, 0.8)); }
-        100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(255, 20, 147, 0.5)); }
-    }
-    .curtain-content h1 {
-        color: #ffffff;
-        font-size: clamp(22px, 5.5vw, 34px);
-        text-align: center;
-        margin: 15px 0;
-        padding: 0 10px;
-        z-index: 2;
-        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 20, 147, 0.6);
-    }
-    #seo-content {
-        color: #ffffff;
-        text-align: center;
-        max-width: 600px;
-        width: 90%;
-        font-size: clamp(16px, 4.5vw, 20px);
-        line-height: 1.5;
-        z-index: 2;
-        background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        padding: 25px;
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    }
-    #seo-content p { margin-top: 0; margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    .progress-text { color: #ffb3cd; font-weight: bold; font-size: clamp(15px, 4vw, 18px); margin-top: 15px; margin-bottom: 8px; text-shadow: 0 0 10px rgba(255, 20, 147, 0.5); letter-spacing: 1px; }
-    .progress-container { width: 100%; height: 12px; background-color: rgba(255, 255, 255, 0.1); border-radius: 50px; margin: 0 auto; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05); }
-    .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #ff416c, #ff4b2b); box-shadow: 0 0 15px #ff416c, 0 0 5px #ff4b2b; border-radius: 50px; transition: width 6s linear; }
-    @media (max-height: 600px) {
-        .curtain-content { padding: 15px 10px; }
-        .curtain-content img { max-height: 35vh; }
-        .curtain-content h1 { font-size: 18px; margin: 5px 0; }
-        #seo-content { font-size: 15px; padding: 15px; }
-        .progress-container { height: 8px; }
-        .progress-text { margin-top: 5px; font-size: 13px; }
+
+    @keyframes flipSlow {
+        0% { transform: rotateX(90deg); opacity: 0; }
+        20% { transform: rotateX(0deg); opacity: 1; }
+        80% { transform: rotateX(0deg); opacity: 1; }
+        100% { transform: rotateX(-360deg); opacity: 1; }
     }
 </style>
 </head>
 <body>
-    <canvas id="particles-canvas"></canvas>
-    <div id="theaterContainer" class="theater-container">
-       
-        <div class="curtain curtain-left">
-            <div class="curtain-content">
-                <img src="radio.png" alt="Ράδιο Γαρύφαλλο">
-                <h1>Καλώς ήρθατε στο Ράδιο Γαρύφαλλο!</h1>
-                <div id="seo-content">
-                    <p>Ο νούμερο ένα προορισμός για ερωτικά τραγούδια στο διαδίκτυο. Ακούστε ζωντανά την καλύτερη ελληνική και ξένη ερωτική μουσική.</p>
-                    <div id="myPersent" class="progress-text">Φόρτωση: 0%</div>
-                    <div class="progress-container">
-                        <div id="myBar" class="progress-bar"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="curtain curtain-right">
-            <div class="curtain-content">
-                <img src="radio.png" alt="Ράδιο Γαρύφαλλο">
-                <h1>Καλώς ήρθατε στο Ράδιο Γαρύφαλλο!</h1>
-                <div id="seo-content">
-                    <p>Ο νούμερο ένα προορισμός για ερωτικά τραγούδια στο διαδίκτυο. Ακούστε ζωντανά την καλύτερη ελληνική και ξένη ερωτική μουσική.</p>
-                    <div class="progress-text">Φόρτωση: 0%</div>
-                    <div class="progress-container">
-                        <div class="progress-bar"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <iframe id="radio-player" src="diplo-player.html" title="Radio Garifalo Player"></iframe>
-    </div>
 
-    <script>
-        let particles = [];
-        let animationFrame;
-        let isOpen = false;
+    <iframe src="kentriki.html" name="mainframe" title="Περιεχόμενο Ραδιοφώνου"></iframe>
 
-        window.addEventListener('DOMContentLoaded', function() {
-            const canvas = document.getElementById('particles-canvas');
-            const ctx = canvas.getContext('2d');
-            const container = document.getElementById('theaterContainer');
-
-            function resize() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-            window.addEventListener('resize', resize);
-            resize();
-
-            class HeartParticle {
-                constructor() {
-                    this.x = Math.random() * canvas.width;
-                    this.y = canvas.height + Math.random() * 30;
-                    this.size = Math.random() * 16 + 12;
-                    this.speedY = Math.random() * 1.2 + 0.8;
-                    this.speedX = Math.sin(Math.random() * 10) * 0.4;
-                    this.opacity = Math.random() * 0.4 + 0.4;
-                }
-                update() {
-                    this.y -= this.speedY;
-                    this.x += this.speedX;
-                    if (this.opacity > 0.005) this.opacity -= 0.0015;
-                }
-                draw() {
-                    ctx.save();
-                    ctx.globalAlpha = this.opacity;
-                    ctx.fillStyle = '#ff3366';
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = '#ff3366';
-                   
-                    ctx.beginPath();
-                    ctx.moveTo(this.x, this.y + this.size / 4);
-                    ctx.quadraticCurveTo(this.x, this.y, this.x + this.size / 2, this.y);
-                    ctx.quadraticCurveTo(this.x + this.size, this.y, this.x + this.size, this.y + this.size / 4);
-                    ctx.quadraticCurveTo(this.x + this.size, this.y + (this.size * 3) / 4, this.x + this.size / 2, this.y + this.size);
-                    ctx.quadraticCurveTo(this.x, this.y + (this.size * 3) / 4, this.x, this.y + this.size / 4);
-                    ctx.closePath();
-                    ctx.fill();
-                    ctx.restore();
-                }
-            }
-
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-               
-                if (!isOpen && particles.length < 65 && Math.random() < 0.15) {
-                    particles.push(new HeartParticle());
-                }
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    particles[i].update();
-                    particles[i].draw();
-                    if (particles[i].y < -40 || particles[i].opacity <= 0) {
-                        particles.splice(i, 1);
-                    }
-                }
-                animationFrame = requestAnimationFrame(animate);
-            }
-            animate();
-
-            // Progress bar
-            var bars = document.querySelectorAll('.progress-bar');
-            var txts = document.querySelectorAll('.progress-text');
-           
-            if (bars.length && txts.length) {
-                setTimeout(function() {
-                    bars.forEach(function(b) { b.style.width = '100%'; });
-                }, 50);
-                var percent = 0;
-                var interval = setInterval(function() {
-                    percent++;
-                    txts.forEach(function(t) { t.innerHTML = 'Φόρτωση: ' + percent + '%'; });
-                    if (percent >= 100) {
-                        clearInterval(interval);
-                    }
-                }, 58);
-            }
-
-            // Άνοιγμα κουρτινών + εξαφάνιση καρδιών
-            setTimeout(function() {
-                isOpen = true;
-                canvas.style.opacity = '0';
-                
-                // Καθαρισμός όλων των καρδιών
-                setTimeout(() => {
-                    particles = [];
-                    cancelAnimationFrame(animationFrame);
-                }, 800);
-                
-                container.classList.add('open');
-            }, 6000);
-        });
-    </script>
 </body>
 </html>
-
