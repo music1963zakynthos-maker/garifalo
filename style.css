@@ -10,7 +10,7 @@ body {
 }
 .bg-container { 
   position: fixed; inset: 0; z-index: -1; 
-  background-image: url('https://i.imgur.com/NMZc9VH.jpeg'); 
+  background-image: url('fonto.jpg'); 
   background-size: cover; background-position: center center; 
   background-repeat: no-repeat; transition: filter 0.4s ease; 
 }
