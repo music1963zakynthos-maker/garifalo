@@ -582,3 +582,20 @@ body {
   0%, 100% { transform: scale(1); } 
   50% { transform: scale(1.1); } 
 }
+
+.glow-btn {
+  font-size: 18px;
+  padding: 5px 5px;
+  border: none;
+  border-radius: 20%;
+  cursor: pointer;
+  color: white;
+  /* Εφέ εναλλαγής χρωμάτων */
+  animation: glowing 3s infinite;
+}
+
+@keyframes glowing {
+  0% { background-color: #ff0055; box-shadow: 0 0 5px #ff0055; }
+  50% { background-color: #00e5ff; box-shadow: 0 0 20px #00e5ff; }
+  100% { background-color: #ff0055; box-shadow: 0 0 5px #ff0055; }
+}
