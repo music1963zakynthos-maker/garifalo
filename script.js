@@ -26,7 +26,6 @@ var isPlayerOpen = false;
 var isPlayerLoaded = false;
 var isAvatarUploading = false;
 var connectTime = 0;
-var isTvLiveOpen = false;
 var unreadPrivateMessages = {}; 
 
 if (!localStorage.getItem('chat_device_unique_id')) { 
@@ -34,8 +33,6 @@ if (!localStorage.getItem('chat_device_unique_id')) {
   localStorage.setItem('chat_device_unique_id', fixedId); 
 }
 currentSessionId = localStorage.getItem('chat_device_unique_id');
-
-var tvDragState = { isDragging: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
 
 function showLoginError(message) {
   var err = document.getElementById('err');
@@ -47,57 +44,6 @@ function showLoginError(message) {
   loginBox.classList.add('shake');
   setTimeout(() => { loginBox.classList.remove('shake'); }, 500);
 }
-
-function toggleTvLiveWindow() { if (isTvLiveOpen) { closeTvLiveWindow(); } else { openTvLiveWindow(); } }
-function openTvLiveWindow() {
-  var win = document.getElementById('tvLiveWindow');
-  if (!isTvLiveOpen) { document.getElementById('tvLiveIframe').src = 'sakis tv/tv.html'; }
-  win.classList.add('show'); isTvLiveOpen = true;
-}
-function closeTvLiveWindow() {
-  var win = document.getElementById('tvLiveWindow');
-  win.classList.remove('show'); win.style.width = ''; win.style.height = '';
-  document.getElementById('tvLiveIframe').src = ''; isTvLiveOpen = false;
-}
-
-var tvHeader = document.getElementById('tvLiveWindowHeader');
-tvHeader.addEventListener('mousedown', function(e) {
-  if (e.target.closest('.tv-live-window-btn')) return;
-  var win = document.getElementById('tvLiveWindow');
-  tvDragState.isDragging = true; tvDragState.startX = e.clientX; tvDragState.startY = e.clientY;
-  var rect = win.getBoundingClientRect(); tvDragState.startLeft = rect.left; tvDragState.startTop = rect.top;
-  win.style.right = 'auto'; win.style.left = rect.left + 'px'; win.style.top = rect.top + 'px';
-  document.body.style.userSelect = 'none'; e.preventDefault();
-});
-document.addEventListener('mousemove', function(e) {
-  if (!tvDragState.isDragging) return;
-  var win = document.getElementById('tvLiveWindow');
-  var dx = e.clientX - tvDragState.startX; var dy = e.clientY - tvDragState.startY;
-  var newLeft = tvDragState.startLeft + dx; var newTop = tvDragState.startTop + dy;
-  newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - win.offsetWidth));
-  newTop = Math.max(0, Math.min(newTop, window.innerHeight - 40));
-  win.style.left = newLeft + 'px'; win.style.top = newTop + 'px';
-});
-document.addEventListener('mouseup', function() {
-  if (tvDragState.isDragging) { tvDragState.isDragging = false; document.body.style.userSelect = ''; }
-});
-tvHeader.addEventListener('touchstart', function(e) {
-  if (e.target.closest('.tv-live-window-btn')) return;
-  var touch = e.touches[0]; var win = document.getElementById('tvLiveWindow');
-  tvDragState.isDragging = true; tvDragState.startX = touch.clientX; tvDragState.startY = touch.clientY;
-  var rect = win.getBoundingClientRect(); tvDragState.startLeft = rect.left; tvDragState.startTop = rect.top;
-  win.style.right = 'auto'; win.style.left = rect.left + 'px'; win.style.top = rect.top + 'px';
-}, { passive: true });
-document.addEventListener('touchmove', function(e) {
-  if (!tvDragState.isDragging) return;
-  var touch = e.touches[0]; var win = document.getElementById('tvLiveWindow');
-  var dx = touch.clientX - tvDragState.startX; var dy = touch.clientY - tvDragState.startY;
-  var newLeft = tvDragState.startLeft + dx; var newTop = tvDragState.startTop + dy;
-  newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - win.offsetWidth));
-  newTop = Math.max(0, Math.min(newTop, window.innerHeight - 40));
-  win.style.left = newLeft + 'px'; win.style.top = newTop + 'px';
-}, { passive: true });
-document.addEventListener('touchend', function() { if (tvDragState.isDragging) { tvDragState.isDragging = false; } });
 
 function ensureAdminOnline() {
   if (currentUser && isAdmin) {
@@ -337,7 +283,7 @@ function addMessageToUI(msg, isPrivate) {
   }
   var contentHtml = '';
   if (img) {
-    contentHtml = `<div class="text"><img src="${img}" style="max-width:250px; border-radius:12px; display:block; margin:6px 0; cursor: pointer;" onclick="openImagePreview(this.src)">${deleteButtonHtml}</div>`;
+    contentHtml = `<div class="text"><img src="${img}" style="max-width:150px; border-radius:12px; display:block; margin:6px 0; cursor: pointer;" onclick="openImagePreview(this.src)">${deleteButtonHtml}</div>`;
   } else if (msg.audioUrl) {
     contentHtml = `<div class="text"><div class="msg-audio-wrapper"><audio controls src="${msg.audioUrl}" preload="none"></audio></div></div>`;
   } else {
@@ -404,7 +350,6 @@ function updateUserList() {
         var avatarClass = isAdminUser ? 'avatar admin-avatar' : 'avatar';
         var adminBadge = isAdminUser ? '<span class="admin-badge">👑 ADMIN</span>' : '';
         
-        // ΕΔΩ ΕΙΝΑΙ ΤΟ ΚΟΚΚΙΝΟ BADGE
         var unreadBadge = unreadPrivateMessages[uid] ? '<span class="unread-badge">' + unreadPrivateMessages[uid] + '</span>' : '';
         
         var avatarHtml = userAvatars[uid]
@@ -415,7 +360,6 @@ function updateUserList() {
             lockBtn = `<button class="private-lock-btn" onclick="startPrivateChat('${uid}', '${escapeHtml(username)}')" title="Ιδιωτικό">🔒</button>`;
             if (isAdmin) { banBtn = `<button class="ban-user-btn show" onclick="banUser('${escapeHtml(username)}')" title="Ban">🚫</button>`; }
         }
-        // ΕΔΩ ΚΟΛΛΑΕΙ ΔΙΠΛΑ ΣΤΟ ΟΝΟΜΑ
         div.innerHTML = `${avatarHtml}<div class="user-info"><div class="user-name">${escapeHtml(username)}${adminBadge}${unreadBadge}</div><div class="user-status">Online</div></div>${lockBtn}${banBtn}`;
         list.appendChild(div);
     });
@@ -432,7 +376,6 @@ async function startPrivateChat(uid, username) {
   currentPrivateChat = uid; 
   currentPrivateChatName = username;
   
-  // ΕΔΩ ΜΗΔΕΝΙΖΕΤΑΙ ΟΤΑΝ ΑΝΟΙΓΕΙΣ ΤΗ ΣΥΝΟΜΙΛΙΑ
   if (unreadPrivateMessages[uid]) {
     delete unreadPrivateMessages[uid];
     updateUserList();
@@ -492,13 +435,12 @@ function subscribeToMessages() {
       var isForMe = msg.receiverUid === currentUid;
       var isFromMe = msg.senderUid === currentUid;
       
-      // ΕΔΩ ΑΥΞΑΝΕΤΑΙ Ο ΜΕΤΡΗΤΗΣ ΚΑΙ ΕΜΦΑΝΙΖΕΤΑΙ ΤΟ BADGE
       if (isForMe && !(currentPrivateChat && currentPrivateChat === msg.senderUid)) {
         if (!unreadPrivateMessages[msg.senderUid]) unreadPrivateMessages[msg.senderUid] = 0;
         unreadPrivateMessages[msg.senderUid]++;
         showToast(msg.senderName, msg.senderUid);
         playNotificationSound();
-        updateUserList(); // Ανανεώνει τη λίστα για να φανεί το badge
+        updateUserList();
       }
       
       if (currentPrivateChat && (isForMe || isFromMe)) { 
@@ -649,7 +591,6 @@ async function logoutChat() {
   document.getElementById('playerIframe').src = ''; 
   document.getElementById('playerPanel').classList.remove('show'); 
   isPlayerOpen = false; 
-  closeTvLiveWindow();
   try { 
     await db.ref('active_sessions/' + currentUid).remove(); 
     await db.ref('users/' + currentUid).remove();
@@ -674,7 +615,7 @@ async function confirmClearMessages() {
 
 function openImagePreview(imgSrc) { var overlay = document.getElementById('imagePreviewOverlay'); var img = document.getElementById('imagePreviewImg'); img.src = imgSrc; overlay.classList.add('show'); }
 function closeImagePreview(event) { if (event.target.id === 'imagePreviewOverlay' || event.target.classList.contains('image-preview-close')) { document.getElementById('imagePreviewOverlay').classList.remove('show'); } }
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { document.getElementById('imagePreviewOverlay').classList.remove('show'); if (isTvLiveOpen) { closeTvLiveWindow(); } } });
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { document.getElementById('imagePreviewOverlay').classList.remove('show'); } });
 document.getElementById('userIn').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('passIn').focus(); });
 document.getElementById('passIn').addEventListener('keypress', e => { if (e.key === 'Enter') goChat(); });
 document.getElementById('msgInput').addEventListener('keypress', e => { if (e.key === 'Enter') sendMsg(); });
