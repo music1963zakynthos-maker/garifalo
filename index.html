@@ -63,16 +63,6 @@
   </div>
 </div>
 
-<div class="tv-live-window" id="tvLiveWindow">
-  <div class="tv-live-window-header" id="tvLiveWindowHeader">
-    <div class="tv-live-window-title"> TV Live</div>
-    <div class="tv-live-window-controls">
-      <button class="tv-live-window-btn close-btn" onclick="closeTvLiveWindow()" title="Κλείσιμο">✕</button>
-    </div>
-  </div>
-  <iframe id="tvLiveIframe" src="" allowfullscreen></iframe>
-</div>
-
 <div class="player-panel" id="playerPanel">
   <div class="player-panel-header">
     <div class="player-panel-title">📻 RadioChat Live - Ραδιόφωνο</div>
@@ -133,11 +123,10 @@
       
       <div class="radio-now-playing-bar" id="radioNowPlayingBar">
         <span class="radio-icon">🎧</span>
-        <span id="radioNowPlayingText" class="radio-text">Αναμονή για τίτλος τραγουδιού...</span>
+        <span id="radioNowPlayingText" class="radio-text">Αναμονή για τίτλο τραγουδιού...</span>
       </div>
       
       <div class="header-actions">
-       
         <button class="glow-btn" id="radioBtn" onclick="togglePlayer()" title="Ραδιόφωνο">▶️</button>
         <button class="action-btn" id="soundBtn" onclick="toggleSound()" title="Ένταση Ήχου">🔊</button>
         <button class="action-btn banned-btn-header" id="bannedBtn" onclick="toggleBannedPanel()" title="Λίστα Banned">⛔</button>
