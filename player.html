@@ -210,7 +210,7 @@
 <div id="effectBtn">Wave 👆</div>
 
 <script>                        
-const STREAM_URL = "https://stream.zeno.fm/gloxyymixiluv";
+const STREAM_URL = "https://stream.zeno.fm/x8gduy6xd48uv";
 const INTRO_URL = "Ξέρεις εσύ, για σένα το λέω.mp3";
 const originalRadioName = "Ράδιο Γαρύφαλλο LIVE";
 
@@ -442,7 +442,7 @@ function startMetadataListener() {
   if (metadataEventSource) {
     metadataEventSource.close();
   }
-  metadataEventSource = new EventSource("https://api.zeno.fm/mounts/metadata/subscribe/gloxyymixiluv");
+  metadataEventSource = new EventSource("https://api.zeno.fm/mounts/metadata/subscribe/x8gduy6xd48uv");
   
   metadataEventSource.onmessage = function(event) {
     try {
