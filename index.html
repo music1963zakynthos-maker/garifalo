@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="google-site-verification" content="HF6HsVO9mWpJG8Bb-Z76COr5XpXitJbszJXlGhnsJU" />
+<title>Ράδιο Γαρύφαλλο - Radio Garifalo | Το πιο ερωτικό ραδιόφωνο</title>
+<link rel="canonical" href="https://white-lab-f071.radiotvlive.workers.dev/" />
+<meta name="description" content="Ράδιο Γαρύφαλλο. Εδώ παίζουμε μόνο ερωτικά τραγούδια. Το πιο ερωτικό ραδιόφωνο στο διαδίκτυο.">
+<meta name="keywords" content="ράδιο Γαρύφαλλο, radio Garifalo, radio live, radio internet, web radio, ερωτικά τραγούδια">
+<meta name="author" content="Radio Garifalo">
+<meta property="og:title" content="Ράδιο Γαρύφαλλο - To πιο ερωτικό ραδιόφωνο">
+<meta property="og:description" content="Εδώ παίζουμε μόνο ερωτικά τραγούδια!">
+<meta property="og:image" content="https://white-lab-f071.radiotvlive.workers.dev/foto-face.png">
+<meta property="og:url" content="https://white-lab-f071.radiotvlive.workers.dev/">
+<link rel="icon" href="favicon.png" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Βασικές ρυθμίσεις σελίδας */
+    body {
+      margin: 0;
+      padding: 0;
+      background-image: url('mikra.jpg'); 
+      background-repeat: no-repeat;
+      background-attachment: fixed; 
+      background-size: 100% 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden; 
+    }
+
+    /* ΤΑ ΚΟΥΜΠΙΑ ΜΕ ΤΟ ΚΟΚΚΙΝΟ PULSE */
+    .switch-btn {
+        position: absolute;
+        left: 30px;
+        z-index: 9999;
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 5px;
+        border: 1px solid #ff0055;
+        background: rgba(0, 0, 0, 0.5);
+        color: #ff0055;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+        box-shadow: 0 0 6px #ff0055, 0 0 12px rgba(255, 0, 85, 0.6);
+        animation: redPulse 1.8s infinite ease-in-out;
+        outline: none;
+    }
+
+    #openBtn {
+        top: 30px;
+    }
+
+    #playerBtn {
+        top: 80px; 
+    }
+
+    /* Εφέ πατήματος κουμπιού */
+    .switch-btn:active {
+        transform: scale(0.97);
+    }
+
+    /* ΚΟΚΚΙΝΟ PULSE */
+    @keyframes redPulse {
+        0% {
+            opacity: 0.75;
+            box-shadow: 0 0 4px #ff0055, 0 0 8px rgba(255, 0, 85, 0.4);
+        }
+        25% {
+            opacity: 1;
+            box-shadow: 0 0 7px #ff0055, 0 0 15px #ff0055, 0 0 25px rgba(255, 0, 85, 0.7);
+        }
+        50% {
+            opacity: 1;
+            box-shadow: 0 0 10px #ff0055, 0 0 20px #ff0055, 0 0 35px rgba(255, 0, 85, 0.9);
+        }
+        75% {
+            opacity: 0.85;
+            box-shadow: 0 0 6px #ff0055, 0 0 12px rgba(255, 0, 85, 0.6);
+        }
+        100% {
+            opacity: 0.75;
+            box-shadow: 0 0 4px #ff0055, 0 0 8px rgba(255, 0, 85, 0.4);
+        }
+    }
+
+    /* HOVER ΓΙΑ ΤΑ ΚΟΥΜΠΙΑ */
+    .switch-btn:hover {
+        background: #ff0055 !important;
+        color: #ffffff !important;
+        border-color: #ffffff !important;
+        box-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055 !important;
+        animation: none; 
+    }
+
+    /* Ο ΧΩΡΟΣ ΓΙΑ ΤΟ ΔΙΚΟ ΣΟΥ ΠΕΡΙΕΧΟΜΕΝΟ */
+    .my-content {
+      padding: 120px 40px 40px 40px;
+      color: white; 
+      transition: opacity 0.4s ease;
+    }
+
+    /* ΤΟ IFRAME ΤΟΥ ΡΑΔΙΟΦΩΝΟΥ ΜΕ ΠΟΛΥ ΠΙΟ ΜΑΛΑΚΟ ΚΑΙ ΑΡΓΟ ΕΦΕ */
+    #viewer {
+      width: 100%;
+      height: 100vh;
+      border: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 10000;
+      
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.99); /* Ξεκινάει πολύ κοντά στο κανονικό μέγεθος για να μην πετάγεται */
+      transition: opacity 5.2s ease-out, transform 5.2s ease-out, visibility 5.2s;
+      pointer-events: none;
+    }
+
+    /* Κλάση που ενεργοποιεί το αργό, ομαλό εφέ εμφάνισης */
+    #viewer.show-effect {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+  </style>
+
+    <style>
+      body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7); 
+      z-index: -1;
+      }
+    </style>
+  
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap');
+
+    .love-radio-overflow-fix {
+        width: 100%;
+        height: 750px; 
+        overflow: hidden; 
+        position: relative;
+        background: transparent;
+        font-family: 'Comfortaa', cursive;
+        pointer-events: none; 
+    }
+
+    .love-radio-content {
+        position: absolute;
+        width: 100%;
+        left: 0;
+        text-align: center;
+        animation: scrollUpFull 50s linear infinite; 
+    }
+
+    .love-radio-content p {
+        margin: 20px 0;
+        font-size: 26px;
+        font-weight: bold;
+        color: #ff0055;
+        text-shadow: 0 0 10px #ff0055, 0 0 20px #800000;
+        line-height: 1.9;
+    }
+
+    .white-highlight {
+        color: #ffffff !important;
+        text-shadow: 0 0 15px #ffffff, 0 0 25px #ff0055 !important;
+    }
+
+    .mega-title {
+        font-size: 36px !important;
+        text-transform: uppercase;
+        margin-bottom: 30px !important;
+    }
+
+    @keyframes scrollUpFull {
+        0% { transform: translateY(750px); } 
+        100% { transform: translateY(-100%); }
+    }
+</style>
+</head>
+<body>
+<h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">Ράδιο Σύννεφα - Radio Synnefa</h1>
+  
+  <button id="openBtn" class="switch-btn">Κάντε κλικ εδώ για ζωντανή συνομιλία.</button>
+  <button id="playerBtn" class="switch-btn">player</button>
+
+  <div class="my-content" id="mainBody">
+<div class="love-radio-overflow-fix">
+    <div class="love-radio-content">
+        <p class="white-highlight">Ζωντανή Μουσική & Live Chat</p>
+        <p>Εδώ υπάρχει ενεργό <strong>live chat</strong> και <strong>ζωντανή μουσική</strong>.<br> Όταν δεν είμαστε live, λειτουργεί <strong>αυτόματος DJ</strong> ώστε να μη μένετε ποτέ χωρίς μουσική.<br></p>
+        <p>Αν θέλετε να ακούσετε μουσική χωρίς chat,<br> απλά πατήστε το κουμπί<br> <strong>«play live»</strong><br> κάτω αριστερά (διαθέσιμο 24 ώρες το 24ωρο).</p>
+        <p>Για να μπείτε στη ζωντανή συνομιλία, αρκεί μια γρήγορη <strong>εγγραφή</strong>.</p>
+        <hr style="border: 0; border-top: 10px solid rgba(255,255,255,0.2); margin: 25px 0;">
+         <p class="mega-title">ΕΔΩ ΠΟΥ Ο ΕΡΩΤΑΣ ΕΙΝΑΙ Η ΜΟΝΗ ΦΩΝΗ...</p>
+        <p class="white-highlight">Ξέχνα ό,τι ήξερες. Σβήσε τον υπόλοιπο κόσμο.</p>
+        <p>Σε αυτή τη συχνότητα, δεν παίζουμε απλά τραγούδια...
+        <strong>υμνούμε το πάθος.</strong></p>
+        <p class="white-highlight">Εδώ κατοικεί μόνο ο Έρωτας.</p>
+        <p>Κάθε νότα, κάθε ανάσα, κάθε στίχος είναι μια ιεροτελεστία
+        που θα βρεις <strong>ΜΟΝΟ ΕΔΩ.</strong></p>
+        <p class="white-highlight">Μην ψάξεις αυτά τα τραγούδια πουθενά αλλού στον πλανήτη.<br>
+        Είναι οι δικές μας αποκλειστικές επιλογές,<br>
+        τα δικά μας μοναδικά διαμάντια που δεν υπάρχουν σε καμία άλλη γωνιά της γης.</p>
+        <p>Μόνο Ερωτικά • Μόνο Πάθος • Μόνο Εδώ</p>
+        <p class="white-highlight">Καλώς ήρθες στο πιο ερωτικό ράδιο της καρδιάς σου...<br>
+        εκεί που η μουσική γδύνει την ψυχή.</p>
+    </div>
+</div>       
+  </div>
+  
+  <iframe id="viewer"></iframe>
+  
+  <script>
+    const btn = document.getElementById('openBtn');
+    const playerBtn = document.getElementById('playerBtn');
+    const viewer = document.getElementById('viewer');
+    const mainBody = document.getElementById('mainBody');
+
+    function openIframe(url) {
+      btn.style.opacity = '0';
+      playerBtn.style.opacity = '0';
+      mainBody.style.opacity = '0';
+      
+      setTimeout(() => {
+        btn.style.display = 'none';
+        playerBtn.style.display = 'none';
+        mainBody.style.display = 'none';
+      }, 300);
+      
+      viewer.src = url;
+      setTimeout(() => {
+        viewer.classList.add('show-effect');
+      }, 50);
+    }
+
+    btn.addEventListener('click', () => openIframe('egrafi.html'));
+    playerBtn.addEventListener('click', () => openIframe('chat-player/player-erotiko/player.html'));
+  </script>
+</body>
+</html>
