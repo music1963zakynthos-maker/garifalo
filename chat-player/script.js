@@ -54,7 +54,7 @@ function ensureAdminOnline() {
 
 function togglePlayer() { if (isPlayerOpen) closePlayer(); else openPlayer(); }
 function openPlayer() { 
-  if (!isPlayerLoaded) { document.getElementById('playerIframe').src = 'player-erotiko/player.html'; isPlayerLoaded = true; } 
+  if (!isPlayerLoaded) { document.getElementById('playerIframe').src = '../diplo-player.html'; isPlayerLoaded = true; } 
   document.getElementById('playerPanel').classList.add('show'); isPlayerOpen = true; 
   document.getElementById('radioBtn').classList.add('playing'); 
 }

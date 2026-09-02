@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Switcher</title>
+
+    <style>
+        /* =====================================================
+           ΒΑΣΙΚΕΣ ΡΥΘΜΙΣΕΙΣ
+           ===================================================== */
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+
+            background-image: url("fonto.png");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+
+            /* ΚΑΜΙΑ SCROLLBAR ΣΤΗ ΔΕΞΙΑ */
+            overflow: hidden;
+        }
+
+
+        /* =====================================================
+           FRAME
+           ===================================================== */
+
+        #frameContainer {
+            width: 100%;
+            height: 100%;
+
+            transition: transform 2.0s ease-in-out;
+
+            background-color: transparent;
+        }
+
+
+        .fullscreen-iframe {
+            width: 100%;
+            height: 100%;
+
+            border: none;
+            display: block;
+        }
+
+
+        /* =====================================================
+           ΚΟΥΜΠΙ ΚΑΤΩ ΑΡΙΣΤΕΡΑ
+           ===================================================== */
+
+        .switch-btn {
+            position: absolute;
+
+            bottom: 15px;
+            left: 15px;
+
+            z-index: 9999;
+
+            padding: 4px 8px;
+
+            font-size: 11px;
+            font-weight: bold;
+
+            cursor: pointer;
+
+            border-radius: 5px;
+
+            border: 1px solid #00ffcc;
+
+            background: rgba(0, 0, 0, 0.5);
+
+            color: #00ffcc;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            transition:
+                background 0.2s ease,
+                color 0.2s ease,
+                border-color 0.2s ease;
+
+            /*
+             * Αρχικό glow
+             */
+            box-shadow:
+                0 0 6px #00ffcc,
+                0 0 12px rgba(0, 255, 204, 0.6);
+
+            /*
+             * ΠΑΛΜΟΣ ΠΟΥ ΤΡΑΒΑΕΙ ΤΟ ΜΑΤΙ
+             */
+            animation: greenPulse 1.8s infinite ease-in-out;
+        }
+
+
+        /* =====================================================
+           ΠΡΑΣΙΝΟ PULSE
+           ===================================================== */
+
+        @keyframes greenPulse {
+
+            0% {
+                opacity: 0.75;
+
+                box-shadow:
+                    0 0 4px #00ffcc,
+                    0 0 8px rgba(0, 255, 204, 0.4);
+            }
+
+            25% {
+                opacity: 1;
+
+                box-shadow:
+                    0 0 7px #00ffcc,
+                    0 0 15px #00ffcc,
+                    0 0 25px rgba(0, 255, 204, 0.7);
+            }
+
+            50% {
+                opacity: 1;
+
+                box-shadow:
+                    0 0 10px #00ffcc,
+                    0 0 20px #00ffcc,
+                    0 0 35px rgba(0, 255, 204, 0.9);
+            }
+
+            75% {
+                opacity: 0.85;
+
+                box-shadow:
+                    0 0 6px #00ffcc,
+                    0 0 12px rgba(0, 255, 204, 0.6);
+            }
+
+            100% {
+                opacity: 0.75;
+
+                box-shadow:
+                    0 0 4px #00ffcc,
+                    0 0 8px rgba(0, 255, 204, 0.4);
+            }
+        }
+
+
+        /* =====================================================
+           ACTIVE STATE
+           RADIO GARIFALO
+           ===================================================== */
+
+        .btn-active-style {
+
+            border: 1px solid #ff0055;
+
+            background: rgba(0, 0, 0, 0.2);
+
+            color: #ff0055;
+
+            text-shadow:
+                0 0 5px rgba(255, 0, 85, 0.7),
+                0 0 10px rgba(255, 0, 85, 0.4);
+
+            /*
+             * ΚΟΚΚΙΝΟ PULSE
+             */
+            animation: redPulse 1.8s infinite ease-in-out;
+        }
+
+
+        /* =====================================================
+           ΚΟΚΚΙΝΟ PULSE
+           ===================================================== */
+
+        @keyframes redPulse {
+
+            0% {
+                opacity: 0.75;
+
+                box-shadow:
+                    0 0 4px #ff0055,
+                    0 0 8px rgba(255, 0, 85, 0.4);
+            }
+
+            25% {
+                opacity: 1;
+
+                box-shadow:
+                    0 0 7px #ff0055,
+                    0 0 15px #ff0055,
+                    0 0 25px rgba(255, 0, 85, 0.7);
+            }
+
+            50% {
+                opacity: 1;
+
+                box-shadow:
+                    0 0 10px #ff0055,
+                    0 0 20px #ff0055,
+                    0 0 35px rgba(255, 0, 85, 0.9);
+            }
+
+            75% {
+                opacity: 0.85;
+
+                box-shadow:
+                    0 0 6px #ff0055,
+                    0 0 12px rgba(255, 0, 85, 0.6);
+            }
+
+            100% {
+                opacity: 0.75;
+
+                box-shadow:
+                    0 0 4px #ff0055,
+                    0 0 8px rgba(255, 0, 85, 0.4);
+            }
+        }
+
+
+        /* =====================================================
+           HOVER
+           ===================================================== */
+
+        .switch-btn:hover {
+            background: rgba(0, 0, 0, 0.75);
+
+            box-shadow:
+                0 0 10px currentColor,
+                0 0 20px currentColor,
+                0 0 35px currentColor;
+        }
+
+
+        /* =====================================================
+           ACTIVE HOVER
+           ===================================================== */
+
+        .btn-active-style:hover {
+            background: rgba(255, 0, 85, 0.3);
+
+            color: #fff;
+
+            border-color: #ff0055;
+
+            box-shadow:
+                0 0 10px #ff0055,
+                0 0 20px #ff0055,
+                0 0 35px #ff0055;
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+    <!-- =====================================================
+         ΚΥΡΙΟ FRAME
+         ===================================================== -->
+
+    <div id="frameContainer">
+
+        <iframe
+            id="chatFrame"
+            src="player-farifalo/player.htm"
+            class="fullscreen-iframe"
+            scrolling="yes">
+        </iframe>
+
+    </div>
+
+
+    <!-- =====================================================
+         ΚΟΥΜΠΙ SWITCH
+         ===================================================== -->
+
+    <button
+        id="switchBtn"
+        class="switch-btn"
+        onclick="toggleChat()">
+        🎧 Auto DJ — Αυτόματη Μουσική
+    </button>
+
+
+    <script>
+
+        let isFirst = true;
+
+        const container = document.getElementById('frameContainer');
+        const frame = document.getElementById('chatFrame');
+        const btn = document.getElementById('switchBtn');
+
+
+        function toggleChat() {
+
+            /*
+             * Βγάζουμε το frame προς τα αριστερά
+             */
+            container.style.transform = "translateX(-100%)";
+
+
+            setTimeout(() => {
+
+                if (isFirst) {
+
+                    /*
+                     * Πηγαίνουμε στο Radio Garifalo
+                     */
+                    frame.src =
+                        "chat-player/player-erotiko/player.html";
+
+                    btn.innerText =
+                        "Επιστροφή στην αρχική";
+
+                    /*
+                     * Κόκκινο εφέ στο κουμπί
+                     */
+                    btn.classList.add('btn-active-style');
+
+                } else {
+
+                    /*
+                     * Επιστρέφουμε στο Radio Synnefa
+                     */
+                    frame.src =
+                        "player-farifalo/player.htm";
+
+                    btn.innerText =
+                        "🎧 Auto DJ — Αυτόματη Μουσική";
+
+                    /*
+                     * Επιστροφή στο πράσινο εφέ
+                     */
+                    btn.classList.remove('btn-active-style');
+                }
+
+
+                /*
+                 * Αλλάζουμε κατάσταση
+                 */
+                isFirst = !isFirst;
+
+
+                /*
+                 * Το frame έρχεται από δεξιά
+                 */
+                container.style.transform = "translateX(100%)";
+
+
+                setTimeout(() => {
+
+                    container.style.transform = "translateX(0)";
+
+                }, 50);
+
+            }, 2000);
+        }
+
+    </script>
+
+</body>
+</html>
+
