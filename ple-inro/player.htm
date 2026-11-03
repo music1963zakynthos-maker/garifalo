@@ -10,7 +10,6 @@
     --pink: #66ff33;
     --pink-light: #ff66dd;
   }
-
   body {
     margin: 0;
     font-family: Segoe UI, Arial, sans-serif;
@@ -35,7 +34,6 @@
     background: linear-gradient(180deg, rgba(0,255,204,0.9), rgba(0,255,204,0.5));
     box-shadow: 0 0 10px rgba(0,255,204,0.9);
   }
-
   #loadingModal {
     display: none;
     position: fixed;
@@ -78,7 +76,6 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-
   .player-btn {
     width:180px;height:180px;border-radius:50%;
     background: rgba(0, 0, 0, 0.0) url('logo.png') center/cover no-repeat;
@@ -103,7 +100,6 @@
   .onair{color:#00ff99;text-shadow:0 0 10px #00ff99}
   .offair{color:#ff6600;text-shadow:0 0 12px #ff6600}
   .loading{color:#ffaa00;text-shadow:0 0 10px #ffaa00}
-
   #equalizer{
     position: fixed;
     top: 0;
@@ -113,7 +109,6 @@
     z-index: 1;
     pointer-events: none;
   }
-
   #nowPlaying {
     position: absolute;
     top: 390px;
@@ -166,14 +161,12 @@
     box-shadow: 0 0 15px #00ffcc; display: flex; align-items: center; justify-content: center;
   }
   body::after {content: "";position: fixed;top: 0;left: 0;width: 100%;height: 100%;background-color: rgba(0, 0, 0, 0.5);z-index: -1;}
-
   /* Κρύβει τον player όσο τρέχει το intro */
   .player-hidden {
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
   }
-
   /* ========== FANCY INTRO ========== */
   #startOverlay {
     position: fixed;
@@ -528,7 +521,6 @@
 </style>
 </head>
 <body>
-
 <!-- FANCY INTRO OVERLAY -->
 <div id="startOverlay">
   <div class="intro-glow"></div>
@@ -555,16 +547,13 @@
   </div>
   <div class="intro-bottom">TURN UP THE VOLUME • LIVE</div>
 </div>
-
 <audio id="introAudio" src="radio spot.mp3" preload="auto"></audio>
-
 <div id="loadingModal">
   <div class="modal-content">
     <div id="modalText">Φόρτωση...</div>
     <div class="spinner"></div>
   </div>
 </div>
-
 <canvas id="equalizer" class="player-hidden"></canvas>
 <div class="player-btn player-hidden" id="visualizerCircle"></div>
 <div id="playBtn" class="player-hidden">Play</div>
@@ -575,17 +564,19 @@
   <span id="volumeValue">100%</span>
 </div>
 <div id="effectBtn" class="player-hidden">Wave</div>
-
 <script>
 const STREAMS = {
   live: { name: "ΚΥΡΙΟΣ ΣΕΡΒΕΡ", streamUrl: "https://freestream.hu:8340/trela233", statusUrl: "https://freestream.hu:8340/status-json.xsl?mount=/trela233" },
-  backup: { name: "BACKUP ΣΕΡΒΕΡ", streamUrl: "https://radio.nitro-server.uk/listen/radiofos/radio.mp3", statusUrl: "https://radio.nitro-server.uk/api/nowplaying/radiofos" }
+  backup: { name: "BACKUP ΣΕΡΒΕΡ", streamUrl: "https://stream.zeno.fm/x8gduy6xd48uv", statusUrl: "https://api.zeno.fm/mounts/metadata/subscribe/x8gduy6xd48uv" }
 };
 const originalRadioName = "Radio  LIVE";
 let audio = new Audio(); audio.crossOrigin = "anonymous";
 let audioCtx, analyser, dataArray, bufferLength, sourceNode;
 let isPlaying = false, isLive = true, retryIntervalMs = 60000;
 let isIntroActive = false, hasIntroPlayed = false;
+let zenoEventSource = null;
+let lastBackupTitle = originalRadioName;
+
 const btn = document.getElementById('playBtn');
 const visualizerCircle = document.getElementById('visualizerCircle');
 const statusEl = document.getElementById('status');
@@ -720,6 +711,7 @@ const effects = [
 ];
 let currentEffect = 3;
 const effectNames = ["Bars", "★ Stars", "Circles", "Wave", "Particles", "OFF"];
+
 function drawEqualizer(){
   requestAnimationFrame(drawEqualizer);
   if(!analyser) return;
@@ -727,10 +719,12 @@ function drawEqualizer(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   effects[currentEffect](ctx, dataArray, canvas.width, canvas.height);
 }
+
 effectBtn.addEventListener('click', () => {
   currentEffect = (currentEffect + 1) % effects.length;
   effectBtn.textContent = effectNames[currentEffect];
 });
+
 volumeSlider.addEventListener('input', () => {
   audio.volume = volumeSlider.value / 100;
   volumeValue.textContent = `${volumeSlider.value}%`;
@@ -743,6 +737,7 @@ function decodeGreek(str){
     return decoder.decode(bytes);
   } catch(e){ return str; }
 }
+
 function updateUIWithTitle(titleText) {
   let finalTitle = titleText || originalRadioName;
   if (finalTitle.length > 20) {
@@ -754,9 +749,45 @@ function updateUIWithTitle(titleText) {
     window.parent.postMessage({ type: 'RADIO_TITLE_UPDATE', title: finalTitle }, '*');
   }
 }
+
+function startZenoMetadata() {
+  stopZenoMetadata();
+  try {
+    zenoEventSource = new EventSource(STREAMS.backup.statusUrl);
+    zenoEventSource.addEventListener("message", function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        if (data && data.streamTitle) {
+          lastBackupTitle = data.streamTitle;
+          if (!isLive && !isIntroActive) {
+            updateUIWithTitle(lastBackupTitle);
+          }
+        }
+      } catch (e) {}
+    });
+    zenoEventSource.onerror = function() {
+      // Αν χαθεί η σύνδεση, προσπαθούμε ξανά μετά από λίγο
+      stopZenoMetadata();
+      setTimeout(function() {
+        if (!isLive && isPlaying) startZenoMetadata();
+      }, 8000);
+    };
+  } catch (e) {
+    console.warn("Zeno metadata error:", e);
+  }
+}
+
+function stopZenoMetadata() {
+  if (zenoEventSource) {
+    try { zenoEventSource.close(); } catch(e) {}
+    zenoEventSource = null;
+  }
+}
+
 async function fetchTitle() {
   if(isIntroActive) return;
   if (isLive) {
+    stopZenoMetadata();
     const url = STREAMS.live.statusUrl;
     try {
       const r = await fetch(url + (url.includes('?') ? '&' : '?') + "t=" + Date.now());
@@ -770,15 +801,11 @@ async function fetchTitle() {
       updateUIWithTitle(title);
     } catch(e) { updateUIWithTitle(originalRadioName); }
   } else {
-    try {
-      const r = await fetch(STREAMS.backup.statusUrl + "?t=" + Date.now());
-      const data = await r.json();
-      if(data && data.now_playing && data.now_playing.song) {
-         updateUIWithTitle(data.now_playing.song.text);
-      }
-    } catch(e) { updateUIWithTitle(originalRadioName); }
+    // Backup (Zeno) – χρησιμοποιούμε το τελευταίο τίτλο από EventSource
+    updateUIWithTitle(lastBackupTitle || originalRadioName);
   }
 }
+
 function startAutoRetry(){
   if(window._playerRetryInterval) return;
   window._playerRetryInterval = setInterval(async () => {
@@ -792,6 +819,7 @@ function startAutoRetry(){
     }
   }, retryIntervalMs);
 }
+
 async function playStream(url, live=true){
   isIntroActive = false;
   audio.pause(); audio.src = ""; isLive = live;
@@ -800,6 +828,13 @@ async function playStream(url, live=true){
   statusEl.textContent = live ? "Φόρτωση Live Streaming" : "Φόρτωση Backup...";
   statusEl.className = "loading";
   audio.src = url;
+
+  if (live) {
+    stopZenoMetadata();
+  } else {
+    startZenoMetadata();
+  }
+
   try {
     await audio.play();
     loadingModal.style.display = "none";
@@ -814,6 +849,7 @@ async function playStream(url, live=true){
         loadingModal.style.display = "none";
         statusEl.textContent = "Offline";
         statusEl.className = "offair";
+        stopZenoMetadata();
     }
   }
 }
@@ -842,7 +878,6 @@ function resizeIntro() {
 function closeIntro() {
   const startOverlay = document.getElementById("startOverlay");
   startOverlay.classList.add("hide");
-
   // Εμφάνισε τον κανονικό player
   document.getElementById('visualizerCircle').classList.remove('player-hidden');
   document.getElementById('playBtn').classList.remove('player-hidden');
@@ -851,7 +886,6 @@ function closeIntro() {
   document.getElementById('volumeControl').classList.remove('player-hidden');
   document.getElementById('effectBtn').classList.remove('player-hidden');
   document.getElementById('equalizer').classList.remove('player-hidden');
-
   setTimeout(function () {
     startOverlay.style.display = "none";
   }, 950);
@@ -861,22 +895,18 @@ function startIntroFromFancy() {
   if (hasIntroPlayed) return;
   hasIntroPlayed = true;
   isIntroActive = true;
-
   const startBtn = document.getElementById("startBtn");
   const introStatus = document.getElementById("introStatus");
   const introProgressWrapper = document.getElementById("introProgressWrapper");
   const skipIntroBtn = document.getElementById("skipIntroBtn");
   const introAudio = document.getElementById("introAudio");
-
   startBtn.style.display = "none";
   introStatus.style.display = "block";
   introStatus.textContent = "INTRO PLAYING";
   introProgressWrapper.style.display = "block";
   skipIntroBtn.style.display = "block";
   setTimeout(resizeIntro, 20);
-
   // setupAudioNodes() ΔΕΝ καλείται εδώ (για να μην βγαίνει η κόκκινη γραμμή)
-
   const playPromise = introAudio.play();
   if (playPromise !== undefined) {
     playPromise.catch(function (error) {
@@ -904,18 +934,15 @@ document.addEventListener("DOMContentLoaded", function () {
   resizeIntro();
   window.addEventListener("resize", resizeIntro);
   window.addEventListener("orientationchange", function () { setTimeout(resizeIntro, 100); });
-
   const startBtn = document.getElementById("startBtn");
   const skipIntroBtn = document.getElementById("skipIntroBtn");
   const introAudio = document.getElementById("introAudio");
   const introStatus = document.getElementById("introStatus");
   const introProgress = document.getElementById("introProgress");
   const introProgressWrapper = document.getElementById("introProgressWrapper");
-
   startBtn.addEventListener("click", function () {
     startIntroFromFancy();
   });
-
   skipIntroBtn.addEventListener("click", function () {
     introStatus.textContent = "CONNECTING TO LIVE...";
     skipIntroBtn.style.display = "none";
@@ -923,18 +950,15 @@ document.addEventListener("DOMContentLoaded", function () {
     resizeIntro();
     setTimeout(finishIntroAndStartLive, 250);
   });
-
   introAudio.addEventListener("play", function () {
     introStatus.textContent = "INTRO PLAYING";
   });
-
   introAudio.addEventListener("timeupdate", function () {
     if (introAudio.duration && isFinite(introAudio.duration)) {
       const percentage = (introAudio.currentTime / introAudio.duration) * 100;
       introProgress.style.width = percentage + "%";
     }
   });
-
   introAudio.addEventListener("ended", function () {
     introProgress.style.width = "100%";
     introStatus.textContent = "CONNECTING TO LIVE...";
@@ -943,7 +967,6 @@ document.addEventListener("DOMContentLoaded", function () {
     resizeIntro();
     setTimeout(finishIntroAndStartLive, 450);
   });
-
   introAudio.addEventListener("error", function () {
     console.warn("Το intro δεν βρέθηκε. Εκκίνηση radio.");
     finishIntroAndStartLive();
@@ -969,6 +992,7 @@ btn.addEventListener('click', () => {
     statusEl.className = "offair";
     isPlaying = false;
     loadingModal.style.display = "none";
+    stopZenoMetadata();
   } else {
     playStream(STREAMS.live.streamUrl, true);
     isPlaying = true;
@@ -981,10 +1005,12 @@ audio.addEventListener('error', () => {
   if(isIntroActive) finishIntroAndStartLive();
   else if(isLive) playStream(STREAMS.backup.streamUrl, false);
 });
+
 audio.addEventListener('ended', () => {
   if(isIntroActive) finishIntroAndStartLive();
   else if(isLive) playStream(STREAMS.backup.streamUrl, false);
 });
+
 setInterval(() => { if(isPlaying && !isIntroActive) fetchTitle(); }, 15000);
 
 let _breathRunning = false;
