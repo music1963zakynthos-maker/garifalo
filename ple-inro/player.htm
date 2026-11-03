@@ -574,7 +574,6 @@ let audio = new Audio(); audio.crossOrigin = "anonymous";
 let audioCtx, analyser, dataArray, bufferLength, sourceNode;
 let isPlaying = false, isLive = true, retryIntervalMs = 60000;
 let isIntroActive = false, hasIntroPlayed = false;
-let zenoEventSource = null;
 let lastBackupTitle = originalRadioName;
 
 const btn = document.getElementById('playBtn');
@@ -750,59 +749,61 @@ function updateUIWithTitle(titleText) {
   }
 }
 
-function startZenoMetadata() {
-  stopZenoMetadata();
+async function fetchZenoTitle() {
   try {
-    zenoEventSource = new EventSource(STREAMS.backup.statusUrl);
-    zenoEventSource.addEventListener("message", function(event) {
-      try {
-        const data = JSON.parse(event.data);
-        if (data && data.streamTitle) {
-          lastBackupTitle = data.streamTitle;
-          if (!isLive && !isIntroActive) {
-            updateUIWithTitle(lastBackupTitle);
-          }
-        }
-      } catch (e) {}
-    });
-    zenoEventSource.onerror = function() {
-      // Αν χαθεί η σύνδεση, προσπαθούμε ξανά μετά από λίγο
-      stopZenoMetadata();
-      setTimeout(function() {
-        if (!isLive && isPlaying) startZenoMetadata();
-      }, 8000);
-    };
-  } catch (e) {
-    console.warn("Zeno metadata error:", e);
-  }
-}
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
 
-function stopZenoMetadata() {
-  if (zenoEventSource) {
-    try { zenoEventSource.close(); } catch(e) {}
-    zenoEventSource = null;
+    const response = await fetch(STREAMS.backup.statusUrl + "?t=" + Date.now(), {
+      signal: controller.signal,
+      headers: { "Accept": "text/event-stream" }
+    });
+
+    clearTimeout(timeoutId);
+
+    const reader = response.body.getReader();
+    const { value } = await reader.read();
+    reader.cancel();
+
+    const text = new TextDecoder().decode(value);
+    const match = text.match(/data:(\{.*?\})/);
+    if (match) {
+      const data = JSON.parse(match[1]);
+      if (data && data.streamTitle) {
+        lastBackupTitle = data.streamTitle;
+        return data.streamTitle;
+      }
+    }
+  } catch (e) {
+    // timeout / abort / network error → κρατάμε τον τελευταίο τίτλο
   }
+  return lastBackupTitle || originalRadioName;
 }
 
 async function fetchTitle() {
-  if(isIntroActive) return;
+  if (isIntroActive) return;
+
   if (isLive) {
-    stopZenoMetadata();
     const url = STREAMS.live.statusUrl;
     try {
       const r = await fetch(url + (url.includes('?') ? '&' : '?') + "t=" + Date.now());
       const data = await r.json();
       let title = "";
-      if(data.icestats && data.icestats.source){
-        const src = Array.isArray(data.icestats.source) ? data.icestats.source.find(s => s.listenurl && s.listenurl.includes("/trela233")) : data.icestats.source;
+      if (data.icestats && data.icestats.source) {
+        const src = Array.isArray(data.icestats.source)
+          ? data.icestats.source.find(s => s.listenurl && s.listenurl.includes("/trela233"))
+          : data.icestats.source;
         title = src && src.title ? src.title : "";
       }
-      if(title) title = decodeGreek(title);
+      if (title) title = decodeGreek(title);
       updateUIWithTitle(title);
-    } catch(e) { updateUIWithTitle(originalRadioName); }
+    } catch (e) {
+      updateUIWithTitle(originalRadioName);
+    }
   } else {
-    // Backup (Zeno) – χρησιμοποιούμε το τελευταίο τίτλο από EventSource
-    updateUIWithTitle(lastBackupTitle || originalRadioName);
+    // Backup (Zeno)
+    const title = await fetchZenoTitle();
+    updateUIWithTitle(title);
   }
 }
 
@@ -820,36 +821,32 @@ function startAutoRetry(){
   }, retryIntervalMs);
 }
 
-async function playStream(url, live=true){
+async function playStream(url, live = true) {
   isIntroActive = false;
-  audio.pause(); audio.src = ""; isLive = live;
+  audio.pause();
+  audio.src = "";
+  isLive = live;
+
   modalText.textContent = live ? "Φόρτωση live streaming" : "Σύνδεση με Backup Server...";
   loadingModal.style.display = "flex";
   statusEl.textContent = live ? "Φόρτωση Live Streaming" : "Φόρτωση Backup...";
   statusEl.className = "loading";
   audio.src = url;
 
-  if (live) {
-    stopZenoMetadata();
-  } else {
-    startZenoMetadata();
-  }
-
   try {
     await audio.play();
     loadingModal.style.display = "none";
     statusEl.textContent = live ? "ON AIR Radio Garifalo " : " ON AIR Radio Garifalo (Backup)";
     statusEl.className = live ? "onair" : "offair";
-    setTimeout(() => { fetchTitle(); }, 2000);
-  } catch(e){
-    if(live) {
-        console.log("Live stream failed, trying backup...");
-        playStream(STREAMS.backup.streamUrl, false);
+    setTimeout(() => { fetchTitle(); }, 1500);
+  } catch (e) {
+    if (live) {
+      console.log("Live stream failed, trying backup...");
+      playStream(STREAMS.backup.streamUrl, false);
     } else {
-        loadingModal.style.display = "none";
-        statusEl.textContent = "Offline";
-        statusEl.className = "offair";
-        stopZenoMetadata();
+      loadingModal.style.display = "none";
+      statusEl.textContent = "Offline";
+      statusEl.className = "offair";
     }
   }
 }
@@ -878,7 +875,6 @@ function resizeIntro() {
 function closeIntro() {
   const startOverlay = document.getElementById("startOverlay");
   startOverlay.classList.add("hide");
-  // Εμφάνισε τον κανονικό player
   document.getElementById('visualizerCircle').classList.remove('player-hidden');
   document.getElementById('playBtn').classList.remove('player-hidden');
   document.getElementById('status').classList.remove('player-hidden');
@@ -906,7 +902,6 @@ function startIntroFromFancy() {
   introProgressWrapper.style.display = "block";
   skipIntroBtn.style.display = "block";
   setTimeout(resizeIntro, 20);
-  // setupAudioNodes() ΔΕΝ καλείται εδώ (για να μην βγαίνει η κόκκινη γραμμή)
   const playPromise = introAudio.play();
   if (playPromise !== undefined) {
     playPromise.catch(function (error) {
@@ -923,7 +918,7 @@ function finishIntroAndStartLive() {
   isIntroActive = false;
   closeIntro();
   
-  setupAudioNodes();          // ξεκινάει τώρα το visualizer
+  setupAudioNodes();
   playStream(STREAMS.live.streamUrl, true);
   isPlaying = true;
   btn.textContent = "Pause";
@@ -992,7 +987,6 @@ btn.addEventListener('click', () => {
     statusEl.className = "offair";
     isPlaying = false;
     loadingModal.style.display = "none";
-    stopZenoMetadata();
   } else {
     playStream(STREAMS.live.streamUrl, true);
     isPlaying = true;
