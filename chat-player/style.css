@@ -10,7 +10,7 @@ body {
 }
 .bg-container { 
   position: fixed; inset: 0; z-index: -1; 
-  background-image: url('fonto-radio.png'); 
+  background-image: url('fonto.jpg'); 
   background-size: cover; background-position: center center; 
   background-repeat: no-repeat; transition: filter 0.4s ease; 
 }
@@ -124,8 +124,8 @@ body {
   cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
 }
 .action-btn:hover { background: rgba(233, 69, 96, 0.2); border-color: rgba(233, 69, 96, 0.5); transform: translateY(-2px); }
-.banned-btn-header, .clear-btn-header { display: none; }
-.banned-btn-header.show, .clear-btn-header.show { display: flex; }
+.banned-btn-header, .clear-btn-header, .video-perm-btn-header { display: none; }
+.banned-btn-header.show, .clear-btn-header.show, .video-perm-btn-header.show { display: flex; }
 #radioBtn.playing { animation: radioPulse 1.5s infinite; background: rgba(124, 58, 237, 0.3); border-color: #a855f7; }
 @keyframes radioPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.8)); } }
 
@@ -263,26 +263,33 @@ body {
 .control-group input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #e94560; cursor: pointer; box-shadow: 0 0 10px rgba(233, 69, 96, 0.5); }
 .control-value { color: #10b981; font-size: 0.85em; margin-top: 6px; font-weight: 600; }
 
-.banned-panel { 
+.banned-panel, .video-perm-panel { 
   position: absolute; bottom: 80px; right: 20px; 
   background: rgba(22, 33, 62, 0.98); backdrop-filter: blur(20px);
   border-radius: 20px; padding: 24px; width: 340px; max-width: calc(100vw - 40px); max-height: 450px; 
   box-shadow: 0 20px 60px rgba(0,0,0,0.7); z-index: 101; display: none; 
   border: 1px solid rgba(220, 38, 38, 0.4); flex-direction: column; 
 }
-.banned-panel.show { display: flex; }
-.banned-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.banned-panel h3 { color: #ef4444; font-size: 1.1em; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0; }
-.close-banned-btn { background: none; border: none; color: #9ca3af; font-size: 1.4em; cursor: pointer; transition: color 0.2s; }
-.close-banned-btn:hover { color: #fff; }
-.banned-users-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; max-height: 340px; }
-.banned-user-item { display: flex; align-items: center; justify-content: space-between; background: rgba(15, 15, 30, 0.6); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.2); }
-.banned-user-info { flex: 1; min-width: 0; }
-.banned-user-name { font-weight: 600; color: #fff; font-size: 0.95em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.banned-panel.show, .video-perm-panel.show { display: flex; }
+.banned-panel-header, .video-perm-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.banned-panel h3, .video-perm-panel h3 { color: #ef4444; font-size: 1.1em; font-weight: 600; display: flex; align-items: center; gap: 8px; margin: 0; }
+.close-banned-btn, .close-video-perm-btn { background: none; border: none; color: #9ca3af; font-size: 1.4em; cursor: pointer; transition: color 0.2s; }
+.close-banned-btn:hover, .close-video-perm-btn:hover { color: #fff; }
+.banned-users-list, .video-perm-users-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; max-height: 340px; }
+.banned-user-item, .perm-user-item { display: flex; align-items: center; justify-content: space-between; background: rgba(15, 15, 30, 0.6); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(220, 38, 38, 0.2); }
+.banned-user-info, .perm-user-info { flex: 1; min-width: 0; }
+.banned-user-name, .perm-user-name { font-weight: 600; color: #fff; font-size: 0.95em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .banned-user-time { font-size: 0.75em; color: #9ca3af; margin-top: 4px; }
 .unban-btn { background: linear-gradient(135deg, #10b981, #059669); border: none; color: #fff; padding: 6px 14px; border-radius: 12px; cursor: pointer; font-size: 0.85em; font-weight: 600; margin-left: 10px; flex-shrink: 0; transition: transform 0.2s; }
 .unban-btn:hover { transform: scale(1.05); }
-.no-banned { text-align: center; color: #9ca3af; padding: 30px 20px; font-style: italic; }
+.no-banned, .no-perm-users { text-align: center; color: #9ca3af; padding: 30px 20px; font-style: italic; }
+
+.toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ef4444; transition: .4s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #10b981; }
+input:checked + .slider:before { transform: translateX(20px); }
 
 .sidebar { 
   width: 260px; 
@@ -409,6 +416,119 @@ body {
 .msg-audio-wrapper { display: flex; align-items: center; gap: 10px; background: rgba(0, 0, 0, 0.3); padding: 10px 14px; border-radius: 14px; margin-top: 6px; border: 1px solid rgba(255,255,255,0.1); }
 .msg-audio-wrapper audio { height: 36px; max-width: 220px; border-radius: 20px; }
 
+/* --- Video Call Styles --- */
+.video-call-btn { 
+  background: rgba(16, 185, 129, 0.2); 
+  border: 1px solid rgba(16, 185, 129, 0.4); 
+  color: #10b981; 
+  padding: 8px 16px; 
+  border-radius: 20px; 
+  cursor: pointer; 
+  font-weight: 600; 
+  font-size: 0.9em;
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+  transition: all 0.2s; 
+}
+.video-call-btn:hover { 
+  background: rgba(16, 185, 129, 0.4); 
+  transform: scale(1.05); 
+}
+
+.video-call-overlay { 
+  position: fixed; 
+  inset: 0; 
+  background: rgba(0, 0, 0, 0.95); 
+  z-index: 10000; 
+  display: none; 
+  align-items: center; 
+  justify-content: center; 
+  backdrop-filter: blur(10px);
+}
+.video-call-overlay.show { 
+  display: flex; 
+}
+
+.video-call-container { 
+  position: relative; 
+  width: 90vw; 
+  max-width: 900px; 
+  aspect-ratio: 16/9; 
+  background: #111; 
+  border-radius: 20px; 
+  overflow: hidden; 
+  box-shadow: 0 25px 80px rgba(0,0,0,0.9); 
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+#remoteVideo { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  background: #1a1a1a;
+}
+
+#localVideo { 
+  position: absolute; 
+  bottom: 80px; 
+  right: 20px; 
+  width: 160px; 
+  height: 120px; 
+  object-fit: cover; 
+  border-radius: 12px; 
+  border: 2px solid rgba(255,255,255,0.3); 
+  box-shadow: 0 8px 25px rgba(0,0,0,0.6); 
+  background: #222; 
+  transition: all 0.3s ease;
+}
+#localVideo:hover {
+  transform: scale(1.05);
+  border-color: #10b981;
+}
+
+.video-call-status {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 600;
+  backdrop-filter: blur(5px);
+}
+
+.video-call-controls { 
+  position: absolute; 
+  bottom: 25px; 
+  left: 50%; 
+  transform: translateX(-50%); 
+  display: flex; 
+  gap: 15px; 
+}
+
+.video-call-btn.hangup { 
+  background: linear-gradient(135deg, #ef4444, #b91c1c); 
+  color: white; 
+  border: none; 
+  padding: 14px 32px; 
+  border-radius: 30px; 
+  font-size: 1.1em; 
+  font-weight: 700; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5); 
+}
+.video-call-btn.hangup:hover { 
+  background: linear-gradient(135deg, #dc2626, #991b1b); 
+  transform: scale(1.05); 
+}
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: rgba(15, 15, 30, 0.3); }
 ::-webkit-scrollbar-thumb { background: rgba(233, 69, 96, 0.5); border-radius: 3px; }
@@ -431,7 +551,7 @@ body {
   .player-panel { right: 230px; }
   .msg { max-width: 70%; }
   .input-area { padding: 12px 16px; }
-  .emoji-panel, .bg-controls-panel, .banned-panel { width: 320px; max-width: calc(100vw - 40px); }
+  .emoji-panel, .bg-controls-panel, .banned-panel, .video-perm-panel { width: 320px; max-width: calc(100vw - 40px); }
 }
 @media (max-width: 899px) and (min-width: 769px) {
   .header { padding: 10px 14px; }
@@ -439,7 +559,7 @@ body {
   .sidebar { width: 210px; }
   .player-panel { right: 210px; }
   .msg { max-width: 75%; }
-  .emoji-panel, .bg-controls-panel, .banned-panel { width: calc(100vw - 32px); max-width: 360px; left: 16px; right: 16px; }
+  .emoji-panel, .bg-controls-panel, .banned-panel, .video-perm-panel { width: calc(100vw - 32px); max-width: 360px; left: 16px; right: 16px; }
 }
 @media (max-width: 768px) {
   .sidebar { position: fixed; top: 0; right: -300px; height: 100vh; z-index: 600; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 280px; box-shadow: -10px 0 40px rgba(0,0,0,0.5); }
@@ -459,12 +579,15 @@ body {
   .input-wrapper { border-radius: 20px; padding: 6px 6px 6px 12px; gap: 6px; }
   .input-field { font-size: 0.95em; padding: 8px 0; }
   .send-btn { width: 42px; height: 42px; }
-  .emoji-panel, .bg-controls-panel, .banned-panel { width: calc(100vw - 32px); left: 16px; right: 16px; bottom: 75px; }
+  .emoji-panel, .bg-controls-panel, .banned-panel, .video-perm-panel { width: calc(100vw - 32px); left: 16px; right: 16px; bottom: 75px; }
   .player-panel { width: 100%; right: 0; height: 100vh; }
   .private-header { padding: 10px 14px; }
   .ban-notification-popup, .ban-type-popup, .clear-confirmation-popup, .audio-preview-popup { padding: 24px; }
   .toast-container { top: 60px; right: 10px; left: 10px; max-width: 100%; }
   .toast { min-width: 0; width: 100%; padding: 14px 16px; }
+  .video-call-container { width: 95vw; aspect-ratio: 9/16; max-height: 80vh; }
+  #localVideo { width: 100px; height: 130px; bottom: 90px; right: 15px; }
+  .video-call-btn.hangup { padding: 12px 24px; font-size: 1em; }
 }
 @media (max-width: 480px) {
   .header { padding: 8px 10px; gap: 6px; min-height: 52px; }
@@ -496,7 +619,7 @@ body {
   .msg { max-width: 75%; }
   .input-area { padding: 6px 10px; }
   .emoji-panel { height: 220px; bottom: 55px; }
-  .bg-controls-panel, .banned-panel { bottom: 55px; }
+  .bg-controls-panel, .banned-panel, .video-perm-panel { bottom: 55px; }
   .player-panel { height: 100vh; }
 }
 

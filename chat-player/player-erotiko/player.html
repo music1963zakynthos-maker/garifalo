@@ -1080,6 +1080,20 @@ function startButtonBreath() {
 loadFallbackPlaylist();
 checkStreamStatus();
 setInterval(checkStreamStatus, 10000);
+
+// === ΔΙΟΡΘΩΣΗ: Listener για έλεγχο έντασης από το chat ===
+window.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'SET_RADIO_VOLUME') {
+    var targetVolume = parseFloat(event.data.volume);
+    if (!isNaN(targetVolume) && targetVolume >= 0 && targetVolume <= 1) {
+      audio.volume = targetVolume;
+      var slider = document.getElementById('volumeSlider');
+      var valueText = document.getElementById('volumeValue');
+      if (slider) slider.value = targetVolume * 100;
+      if (valueText) valueText.textContent = Math.round(targetVolume * 100) + '%';
+    }
+  }
+});
 </script>
 </body>
 </html>

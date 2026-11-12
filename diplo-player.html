@@ -140,7 +140,7 @@
         }
 
         /* =====================================================
-           ΛΑΜΒΑΝΕΙ ΤΟΝ ΤΙΤΛΟ ΑΠΟ ΤΟΝ PLAYER ΚΑΙ ΤΟΝ ΠΡΟΩΘΕΙ
+           ΛΑΜΒΑΝΕΙ ΤΟΝ ΤΙΤΛΟ ΑΠΟ ΤΟΝ PLAYER ΚΑΙ ΤΟΝ ΠΡΟΣΘΕΙ
            ΣΤΟ CHAT (ΜΕΣΩ document.title ΚΑΙ postMessage)
            ===================================================== */
         window.addEventListener('message', function(event) {
@@ -148,10 +148,10 @@
                 const songTitle = event.data.title;
                 if (!songTitle) return;
 
-                // 1. Αλλάζει τον τίτλο της σελίδας (το chat τον διαβάζει από εδώ)
+                // 1. Αλλάζει τον τίτλο της σελίδας
                 document.title = "🎵 " + songTitle;
 
-                // 2. Προωθεί τον τίτλο σε ΟΛΑ τα iframes της σελίδας (για να φτάσει στο chat)
+                // 2. Προωθεί τον τίτλο σε ΟΛΑ τα iframes
                 var allIframes = document.getElementsByTagName('iframe');
                 for (var i = 0; i < allIframes.length; i++) {
                     try {
@@ -162,7 +162,7 @@
                     } catch(e) {}
                 }
 
-                // 3. Προωθεί τον τίτλο και στο γονικό παράθυρο (αν υπάρχει)
+                // 3. Προωθεί τον τίτλο και στο γονικό παράθυρο
                 if (window.parent && window.parent !== window) {
                     try {
                         window.parent.postMessage(
@@ -172,13 +172,23 @@
                     } catch(e) {}
                 }
 
-                // 4. Προωθεί τον τίτλο και σε οποιοδήποτε παράθυρο έχει ανοιχτεί
+                // 4. Προωθεί τον τίτλο και σε όποιο παράθυρο έχει ανοιχτεί
                 if (window.opener) {
                     try {
                         window.opener.postMessage(
                             { type: 'RADIO_TITLE_UPDATE', title: songTitle }, 
                             '*'
                         );
+                    } catch(e) {}
+                }
+            }
+
+            // === Προώθηση του volume control προς τον πραγματικό player ===
+            if (event.data && event.data.type === 'SET_RADIO_VOLUME') {
+                var frame = document.getElementById('chatFrame');
+                if (frame && frame.contentWindow) {
+                    try {
+                        frame.contentWindow.postMessage(event.data, '*');
                     } catch(e) {}
                 }
             }

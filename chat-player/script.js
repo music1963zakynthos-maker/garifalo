@@ -28,6 +28,16 @@ var isAvatarUploading = false;
 var connectTime = 0;
 var unreadPrivateMessages = {}; 
 
+// Video Call Variables
+var localPeer = null;
+var currentCall = null;
+var localStream = null;
+var peerReady = false;
+var isUserBusy = false;
+var activeCallPartnerUid = null;
+window.pendingIncomingCall = null;
+window.callWasRejected = false;
+
 if (!localStorage.getItem('chat_device_unique_id')) { 
   var fixedId = 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now(); 
   localStorage.setItem('chat_device_unique_id', fixedId); 
@@ -97,6 +107,7 @@ var emojiCategories = {
 
 Object.keys(emojiCategories).forEach(category => { 
   var container = document.getElementById(category); 
+  if(!container) return;
   emojiCategories[category].forEach(emoji => { 
     var span = document.createElement('span'); span.className = 'emoji'; span.textContent = emoji; 
     span.onclick = function() { document.getElementById('msgInput').value += emoji; document.getElementById('msgInput').focus(); }; 
@@ -115,6 +126,7 @@ function toggleBgControls() {
   document.getElementById('bgControlsPanel').classList.toggle('show'); 
   document.getElementById('bannedPanel').classList.remove('show'); 
   document.getElementById('emojiPanel').classList.remove('show');
+  document.getElementById('videoPermPanel').classList.remove('show');
 }
 function updateBackground() { 
   var posX = document.getElementById('bgPositionX').value; var brightness = document.getElementById('bgBrightness').value; 
@@ -179,9 +191,52 @@ function renderBannedUsersPanel() {
 }
 function toggleBannedPanel() { 
   var panel = document.getElementById('bannedPanel'); panel.classList.toggle('show'); 
-  document.getElementById('bgControlsPanel').classList.remove('show'); document.getElementById('emojiPanel').classList.remove('show'); 
+  document.getElementById('bgControlsPanel').classList.remove('show'); document.getElementById('emojiPanel').classList.remove('show'); document.getElementById('videoPermPanel').classList.remove('show');
   if (panel.classList.contains('show')) { loadBannedUsers().then(() => renderBannedUsersPanel()); } 
 }
+
+function toggleVideoPermPanel() {
+  var panel = document.getElementById('videoPermPanel');
+  panel.classList.toggle('show');
+  document.getElementById('bgControlsPanel').classList.remove('show');
+  document.getElementById('bannedPanel').classList.remove('show');
+  document.getElementById('emojiPanel').classList.remove('show');
+  if (panel.classList.contains('show')) { loadVideoPermissions(); }
+}
+
+async function loadVideoPermissions() {
+  var list = document.getElementById('videoPermUsersList');
+  list.innerHTML = '<div class="no-perm-users">Φόρτωση...</div>';
+  try {
+    var snap = await db.ref('registered_users').orderByChild('username').once('value');
+    list.innerHTML = '';
+    if (snap.exists()) {
+      snap.forEach(child => {
+        var user = child.val();
+        var uid = child.key;
+        var div = document.createElement('div');
+        div.className = 'perm-user-item';
+        var isChecked = (user.can_video_call === true || user.can_video_call === 'true' || user.can_video_call === 'True' || user.can_video_call === undefined);
+        div.innerHTML = `<div class="perm-user-info"><div class="perm-user-name">${escapeHtml(user.username)}</div></div>` +
+          `<label class="toggle-switch"><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="updateVideoPermission('${escapeHtml(uid)}', this.checked)"><span class="slider"></span></label>`;
+        list.appendChild(div);
+      });
+    } else {
+      list.innerHTML = '<div class="no-perm-users">Δεν βρέθηκαν χρήστες</div>';
+    }
+  } catch(e) {
+    list.innerHTML = '<div class="no-perm-users">Σφάλμα φόρτωσης</div>';
+  }
+}
+
+async function updateVideoPermission(uid, isChecked) {
+  try {
+    await db.ref('registered_users/' + uid).update({ can_video_call: isChecked });
+  } catch (err) {
+    alert("❌ ΣΦΑΛΜΑ: " + err.message);
+  }
+}
+
 function handleBannedWhileOnline() { 
   document.getElementById('banNotifOverlay').classList.add('show'); 
   setTimeout(async () => { 
@@ -262,6 +317,12 @@ async function loadPrivateMessages(otherUid, otherName) {
 function addMessageToUI(msg, isPrivate) {
   var container = document.getElementById('msgContainer');
   if (msg._id) { var existingMsg = container.querySelector(`.msg[data-msg-id="${msg._id}"]`); if (existingMsg) return; }
+  
+  var msgText = msg.message || msg.text || "";
+  if (msgText === '[📞 CALL_REJECTED]' || msgText === '[📞 CALL_CANCELLED]' || msgText === '[📞 CALL_BUSY]') {
+    return;
+  }
+
   var div = document.createElement('div');
   var senderName = msg.userName || msg.senderName || msg.user || msg.sender || "Άγνωστος";
   var senderUid = msg.userId || msg.senderUid || "unknown";
@@ -320,6 +381,7 @@ function toggleEmoji() {
   document.getElementById('emojiPanel').classList.toggle('show'); 
   document.getElementById('bannedPanel').classList.remove('show'); 
   document.getElementById('bgControlsPanel').classList.remove('show'); 
+  document.getElementById('videoPermPanel').classList.remove('show');
 }
 
 function showToast(senderName, senderUid) {
@@ -421,17 +483,53 @@ function subscribeToMessages() {
   db.ref('messages').on('child_removed', (snap) => {
     var removedId = snap.key; if (!currentPrivateChat) { var msgDiv = document.querySelector(`.msg[data-msg-id="${removedId}"]`); if (msgDiv) msgDiv.remove(); }
   });
+  
   db.ref('private_messages').on('child_added', (chatSnap) => {
     var chatId = chatSnap.key; if (!chatId.includes(currentUid)) return;
+    
     db.ref('private_messages/' + chatId).on('value', (snap) => {
       if (!snap.exists() && currentPrivateChat) {
         var currentChatId = [currentUid, currentPrivateChat].sort().join('_');
         if (chatId === currentChatId) { document.getElementById('msgContainer').innerHTML = ''; }
       }
     });
+    
     db.ref('private_messages/' + chatId).on('child_added', (msgSnap) => {
       var msg = msgSnap.val(); msg._id = msgSnap.key;
       if (msg.timestamp && msg.timestamp < connectTime) return;
+      
+      var msgText = msg.message || msg.text || '';
+      
+      if (msgText === '[📞 CALL_REJECTED]' || msgText === '[📞 CALL_CANCELLED]' || msgText === '[📞 CALL_BUSY]') {
+        var isForMe = (msg.receiverUid === currentUid) || String(msg.receiverUid).startsWith(currentUid + '_') || currentUid.startsWith(String(msg.receiverUid) + '_');
+        if (isForMe) {
+          var isFromTarget = activeCallPartnerUid && (msg.senderUid === activeCallPartnerUid || String(msg.senderUid).startsWith(activeCallPartnerUid + '_') || activeCallPartnerUid.startsWith(String(msg.senderUid) + '_'));
+          var isFromPendingCaller = window.pendingIncomingCall && (msg.senderUid === window.pendingIncomingCall.callerUid || String(msg.senderUid).startsWith(window.pendingIncomingCall.callerUid + '_') || window.pendingIncomingCall.callerUid.startsWith(String(msg.senderUid) + '_'));
+
+          if (msgText === '[📞 CALL_REJECTED]' && isFromTarget) {
+            window.callWasRejected = true;
+            if (currentCall) { try { currentCall.close(); } catch(e){} }
+            document.getElementById('videoCallStatus').textContent = '❌ Η κήση απορρίφθηκε';
+            setTimeout(function() { endVideoCall(); }, 1800);
+          }
+          if (msgText === '[📞 CALL_CANCELLED]' && isFromPendingCaller) {
+            var incomingOverlay = document.getElementById('incomingCallOverlay');
+            if (incomingOverlay) incomingOverlay.remove();
+            window.pendingIncomingCall = null;
+            isUserBusy = false;
+            activeCallPartnerUid = null;
+          }
+          if (msgText === '[📞 CALL_BUSY]' && isFromTarget) {
+            window.callWasRejected = true;
+            if (currentCall) { try { currentCall.close(); } catch(e){} }
+            var statusEl = document.getElementById('videoCallStatus');
+            if (statusEl) { statusEl.textContent = '🚫 Ο χρήστης είναι απασχολημένος'; }
+            setTimeout(function() { endVideoCall(); }, 900);
+          }
+        }
+        return;
+      }
+
       var isForMe = msg.receiverUid === currentUid;
       var isFromMe = msg.senderUid === currentUid;
       
@@ -448,6 +546,7 @@ function subscribeToMessages() {
         if (chatId === currentChatId) { addMessageToUI(msg, true); if (isForMe) msgSnap.ref.update({ is_read: true }); } 
       }
     });
+    
     db.ref('private_messages/' + chatId).on('child_removed', (snap) => {
       var removedId = snap.key; var msgDiv = document.querySelector(`.msg[data-msg-id="${removedId}"]`); if (msgDiv) msgDiv.remove();
     });
@@ -478,7 +577,7 @@ async function registerUser() {
   var usersSnap = await db.ref('registered_users').orderByChild('username').equalTo(lowerUsername).once('value');
   if (usersSnap.exists()) { showLoginError('❌ Αυτό το όνομα είναι ήδη κατοχυρωμένο!'); return; }
   var newUid = 'uid_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-  await db.ref('registered_users/' + newUid).set({ username: username, password: password, avatar: null, created_at: Date.now() });
+  await db.ref('registered_users/' + newUid).set({ username: username, password: password, avatar: null, created_at: Date.now(), can_video_call: true });
   localStorage.setItem('chat_uid', newUid);
   localStorage.setItem('chat_username', username); 
   localStorage.setItem('chat_password', password);
@@ -535,14 +634,153 @@ async function goChat(isAutoLogin = false) {
   } catch(e) { showLoginError('Σφάλμα: ' + e.message); } 
 }
 
+function initPeerJS() {
+  return new Promise((resolve, reject) => {
+    if (localPeer && peerReady) { resolve(); return; }
+    if (localPeer) { try { localPeer.destroy(); } catch(e){} localPeer = null; peerReady = false; }
+    
+    var peerId = currentUid;
+    localPeer = new Peer(peerId, {
+      debug: 0,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      }
+    });
+    
+    localPeer.on('open', (id) => { peerReady = true; resolve(); });
+    
+    localPeer.on('error', (err) => {
+      if (err.type === 'unavailable-id') {
+        var newId = currentUid + '_' + Math.random().toString(36).substr(2, 5);
+        localPeer.destroy();
+        localPeer = new Peer(newId, { 
+          debug: 0, 
+          config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] } 
+        });
+        localPeer.on('open', (id) => { peerReady = true; resolve(); });
+        localPeer.on('error', (err2) => { peerReady = false; reject(err2); });
+        localPeer.on('call', handleIncomingCall);
+      } else if (err.type !== 'peer-unavailable' && err.type !== 'network') {
+        peerReady = false; reject(err);
+      }
+    });
+    
+    localPeer.on('call', handleIncomingCall);
+  });
+}
+
+function handleIncomingCall(call) {
+  var callerName = 'Άγνωστος';
+  var callerUid = call.peer;
+
+  for (var uidKey in onlineUsers) {
+    if (callerUid === uidKey || callerUid.startsWith(uidKey + '_') || uidKey.startsWith(String(callerUid) + '_')) {
+      callerName = onlineUsers[uidKey].username;
+      callerUid = uidKey;
+      break;
+    }
+  }
+
+  if (isUserBusy) {
+    try { call.close(); } catch(e) {}
+    var chatId = [currentUid, callerUid].sort().join('_');
+    db.ref('private_messages/' + chatId).push({
+      senderUid: currentUid, senderName: currentUser, receiverUid: callerUid, receiverName: callerName || '',
+      message: '[📞 CALL_BUSY]', timestamp: Date.now()
+    }).catch(() => {});
+    return;
+  }
+
+  showIncomingCall(callerName, callerUid, call);
+}
+
+function showIncomingCall(callerName, callerUid, call) {
+  isUserBusy = true;
+  activeCallPartnerUid = callerUid;
+  
+  var overlay = document.createElement('div');
+  overlay.id = 'incomingCallOverlay';
+  overlay.className = 'video-call-overlay show';
+  overlay.innerHTML = `<div class="video-call-container" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;">
+    <div style="font-size:5em;margin-bottom:20px;animation:radioPulse 1.5s infinite;">📞</div>
+    <h2 style="color:#fff;font-size:1.8em;margin-bottom:10px;">Εισερχόμενη Κλήση</h2>
+    <p style="color:#10b981;font-size:1.3em;margin-bottom:30px;">${escapeHtml(callerName)}</p>
+    <div style="display:flex;gap:20px;">
+      <button class="video-call-btn" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:16px 32px;font-size:1.1em;border-radius:30px;" onclick="answerIncomingCall()">✅ Απάντηση</button>
+      <button class="video-call-btn hangup" onclick="rejectIncomingCall()">❌ Απόρριψη</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  window.pendingIncomingCall = { call: call, callerUid: callerUid, callerName: callerName };
+}
+
+function answerIncomingCall() {
+  var pending = window.pendingIncomingCall;
+  if (!pending) return;
+  var call = pending.call;
+  var callerName = pending.callerName;
+  
+  var incomingOverlay = document.getElementById('incomingCallOverlay');
+  if (incomingOverlay) incomingOverlay.remove();
+  window.pendingIncomingCall = null;
+  
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(function(stream) {
+    localStream = stream;
+    document.getElementById('localVideo').srcObject = stream;
+    lowerRadioForCall();
+    document.getElementById('videoCallStatus').textContent = 'Σε σύνδεση με ' + callerName + '...';
+    document.getElementById('videoCallOverlay').classList.add('show');
+    call.answer(stream);
+    currentCall = call;
+    call.on('stream', function(remoteStream) {
+      document.getElementById('remoteVideo').srcObject = remoteStream;
+      document.getElementById('videoCallStatus').textContent = 'Σε σύνδεση με ' + callerName;
+    });
+    call.on('close', function() { endVideoCall(); });
+    call.on('error', function() { endVideoCall(); });
+  }).catch(function(err) {
+    alert('Δεν ήταν δυνατή η πρόσβαση στην κάμερα/μικρόφωνο: ' + err.message);
+    call.close();
+    isUserBusy = false;
+    activeCallPartnerUid = null;
+  });
+}
+
+async function rejectIncomingCall() {
+  var pending = window.pendingIncomingCall;
+  if (!pending) return;
+  pending.call.close();
+  try {
+    var chatId = [currentUid, pending.callerUid].sort().join('_');
+    await db.ref('private_messages/' + chatId).push({
+      senderUid: currentUid, senderName: currentUser, receiverUid: pending.callerUid, receiverName: pending.callerName || '',
+      message: '[📞 CALL_REJECTED]', timestamp: Date.now()
+    });
+  } catch(e) {}
+  window.pendingIncomingCall = null;
+  isUserBusy = false;
+  activeCallPartnerUid = null;
+  var incomingOverlay = document.getElementById('incomingCallOverlay');
+  if (incomingOverlay) incomingOverlay.remove();
+}
+
 async function enterChat(username, uid) {
   currentUser = username; currentUid = uid; connectTime = Date.now();
+
+  try { await initPeerJS(); } catch(e) {}
+
   if (currentUser.toLowerCase() === "sakis") { 
     isAdmin = true; document.getElementById('adminClearBtn').classList.add('show'); 
-    document.getElementById('bannedBtn').classList.add('show'); document.getElementById('clearBtn').classList.add('show'); 
+    document.getElementById('bannedBtn').classList.add('show'); document.getElementById('clearBtn').classList.add('show');
+    document.getElementById('videoPermBtn').classList.add('show');
   } else { 
     isAdmin = false; document.getElementById('clearBtn').classList.remove('show'); document.getElementById('bannedBtn').classList.remove('show');
+    document.getElementById('videoPermBtn').classList.remove('show');
   } 
+  
   var regSnap = await db.ref('registered_users/' + currentUid).once('value');
   var regData = regSnap.val();
   var avatarUrl = null;
@@ -588,6 +826,10 @@ async function adminClearAll() {
 
 async function logoutChat() { 
   if (!confirm("⚠️ Χρειάζεται πραγματικά να αποσυνδεθείτε;\n\nΗ αποσύνδεση είναι απαραίτητη μόνο αν θέλετε να συνδεθείτε από άλλον browser ή συσκευή.\n\nΑν αποσυνδεθείτε, η αυτόματη είσοδος θα απενεργοποιηθεί και θα χρειαστεί να βάλετε ξανά το όνομα χρήστη και τον κωδικό σας.\n\nΘέλετε να συνεχίσετε;")) return; 
+  
+  endVideoCall();
+  if (localPeer) { try { localPeer.destroy(); } catch(e){} localPeer = null; peerReady = false; }
+  
   document.getElementById('playerIframe').src = ''; 
   document.getElementById('playerPanel').classList.remove('show'); 
   isPlayerOpen = false; 
@@ -631,6 +873,103 @@ window.addEventListener('message', function(event) {
   }
 });
 
+// --- Video Call Functions ---
+async function startVideoCall() {
+  try {
+    var regSnap = await db.ref('registered_users/' + currentUid).once('value');
+    var regData = regSnap.val();
+    var hasPermission = regData && (regData.can_video_call === true || regData.can_video_call === 'true' || regData.can_video_call === 'True' || regData.can_video_call === undefined);
+    if (!hasPermission) {
+      alert('⛔ Δεν έχεις δικαίωμα βιντεοκλήσης!\nΠαρακαλώ επικοινώνησε με τον διαχειριστή.');
+      return;
+    }
+  } catch(e) {}
+
+  if (!currentPrivateChat) { alert('Πρέπει να είσαι σε ιδιωτική συνομιλία!'); return; }
+  if (!localPeer || !peerReady) { alert('Η σύνδεση δεν είναι έτοιμη.'); return; }
+  if (isUserBusy) { alert('Είσαι ήδη σε κλήση!'); return; }
+  
+  document.getElementById('videoCallStatus').textContent = 'Καλώ ' + (currentPrivateChatName || '') + '...';
+  document.getElementById('videoCallOverlay').classList.add('show');
+  
+  isUserBusy = true;
+  activeCallPartnerUid = currentPrivateChat;
+  window.callWasRejected = false;
+
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(function(stream) {
+    localStream = stream;
+    document.getElementById('localVideo').srcObject = stream;
+    lowerRadioForCall();
+    var call = localPeer.call(currentPrivateChat, stream);
+    if (!call) { alert('Αποτυχία κλήσης.'); endVideoCall(); return; }
+    currentCall = call;
+
+    var callTimeout = setTimeout(function() {
+      if (isUserBusy && currentCall && !document.getElementById('remoteVideo').srcObject) {
+        document.getElementById('videoCallStatus').textContent = '⏳ Δεν απάντησε / Απασχολημένος';
+        try { currentCall.close(); } catch(e) {}
+        setTimeout(function() { endVideoCall(); }, 1200);
+      }
+    }, 12000);
+    
+    call.on('stream', function(remoteStream) {
+      clearTimeout(callTimeout);
+      document.getElementById('remoteVideo').srcObject = remoteStream;
+      document.getElementById('videoCallStatus').textContent = 'Σε σύνδεση';
+    });
+    call.on('close', function() {
+      clearTimeout(callTimeout);
+      if (window.callWasRejected) { setTimeout(function() { endVideoCall(); }, 100); }
+      else { endVideoCall(); }
+    });
+    call.on('error', function() {
+      clearTimeout(callTimeout);
+      document.getElementById('videoCallStatus').textContent = 'Σφάλμα σύνδεσης';
+      setTimeout(function() { endVideoCall(); }, 1200);
+    });
+  }).catch(function(err) {
+    alert('Δεν ήταν δυνατή η πρόσβαση στην κάμερα/μικρόφωνο.');
+    endVideoCall();
+  });
+}
+
+async function endVideoCall() {
+  restoreRadioAfterCall();
+  var remoteVideo = document.getElementById('remoteVideo');
+  if (remoteVideo && !remoteVideo.srcObject && activeCallPartnerUid && !window.callWasRejected) {
+    try {
+      var chatId = [currentUid, activeCallPartnerUid].sort().join('_');
+      await db.ref('private_messages/' + chatId).push({
+        senderUid: currentUid, senderName: currentUser, receiverUid: activeCallPartnerUid,
+        receiverName: currentPrivateChatName || '', message: '[📞 CALL_CANCELLED]', timestamp: Date.now()
+      });
+    } catch(e) {}
+  }
+  if (currentCall) { try { currentCall.close(); } catch(e){} currentCall = null; }
+  if (localStream) { localStream.getTracks().forEach(function(track) { track.stop(); }); localStream = null; }
+  document.getElementById('localVideo').srcObject = null;
+  document.getElementById('remoteVideo').srcObject = null;
+  document.getElementById('videoCallOverlay').classList.remove('show');
+  document.getElementById('videoCallStatus').textContent = 'Σύνδεση...';
+  window.callWasRejected = false;
+  isUserBusy = false;
+  activeCallPartnerUid = null;
+  var incomingOverlay = document.getElementById('incomingCallOverlay');
+  if (incomingOverlay) incomingOverlay.remove();
+  window.pendingIncomingCall = null;
+}
+
+function lowerRadioForCall() {
+  var iframe = document.getElementById('playerIframe');
+  if (iframe && iframe.contentWindow) { iframe.contentWindow.postMessage({ type: 'SET_RADIO_VOLUME', volume: 0 }, '*'); }
+}
+
+function restoreRadioAfterCall() {
+  var iframe = document.getElementById('playerIframe');
+  if (iframe && iframe.contentWindow) { iframe.contentWindow.postMessage({ type: 'SET_RADIO_VOLUME', volume: 1.0 }, '*'); }
+}
+
+// --- Audio Recording ---
 let mediaRecorder = null;
 let audioChunks = [];
 let recordingInterval = null;
@@ -713,6 +1052,7 @@ async function sendAudioMessage() {
   } catch (err) { alert('Σφάλμα κατά την αποστολή: ' + err.message); } 
   finally { sendBtn.textContent = originalText; sendBtn.disabled = false; }
 }
+
 document.addEventListener('DOMContentLoaded', function() {
     var passIn = document.getElementById('passIn');
     var passHint = document.getElementById('passHint');

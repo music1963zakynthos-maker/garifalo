@@ -161,13 +161,11 @@
     box-shadow: 0 0 15px #00ffcc; display: flex; align-items: center; justify-content: center;
   }
   body::after {content: "";position: fixed;top: 0;left: 0;width: 100%;height: 100%;background-color: rgba(0, 0, 0, 0.5);z-index: -1;}
-  /* Κρύβει τον player όσο τρέχει το intro */
   .player-hidden {
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
   }
-  /* ========== FANCY INTRO ========== */
   #startOverlay {
     position: fixed;
     inset: 0;
@@ -521,7 +519,6 @@
 </style>
 </head>
 <body>
-<!-- FANCY INTRO OVERLAY -->
 <div id="startOverlay">
   <div class="intro-glow"></div>
   <div class="intro-content">
@@ -529,7 +526,7 @@
       <div class="intro-logo-ring"></div>
       <img src="intro.png" alt="Radio Live" class="intro-logo">
     </div>
-    <div class="intro-station">RADIO GARIFALO LIVE</div>
+    <div class="intro-station">Radio Garifalo LIVE </div>
     <div class="intro-live">
       <span class="intro-live-dot"></span>
       LIVE RADIO
@@ -558,7 +555,7 @@
 <div class="player-btn player-hidden" id="visualizerCircle"></div>
 <div id="playBtn" class="player-hidden">Play</div>
 <div id="status" class="offair player-hidden">Πάτησε Play</div>
-<div id="nowPlaying" class="player-hidden"><span class="static-text">Radio Garifalo Live </span></div>
+<div id="nowPlaying" class="player-hidden"><span class="static-text">Radio Garifalo Live</span></div>
 <div id="volumeControl" class="player-hidden">
   <input type="range" id="volumeSlider" min="0" max="100" value="100">
   <span id="volumeValue">100%</span>
@@ -753,7 +750,6 @@ function updateUIWithTitle(titleText) {
   }
 }
 
-/* ========== ZENO METADATA (EventSource) ========== */
 function startZenoMetadata() {
   stopZenoMetadata();
   const url = STREAMS.backup.zenoMetaUrl(STREAMS.backup.zenoStationId);
@@ -824,12 +820,10 @@ function startAutoRetry(){
   }, retryIntervalMs);
 }
 
-/* ========== ΒΕΛΤΙΩΜΕΝΟ playStream ========== */
 async function playStream(url, live = true) {
   isIntroActive = false;
   isLive = live;
 
-  // Διαχείριση Zeno metadata
   if (live) {
     stopZenoMetadata();
   } else {
@@ -841,24 +835,19 @@ async function playStream(url, live = true) {
   statusEl.textContent = live ? "Φόρτωση Live Streaming" : "Φόρτωση Backup...";
   statusEl.className = "loading";
 
-  // Καθαρίζουμε προηγούμενη κατάσταση χωρίς να προκαλούμε επιπλέον error
   audio.pause();
   audio.removeAttribute('src');
   audio.load();
 
   audio.src = url;
 
-  // Δεν βασιζόμαστε στο await για την επιτυχία.
-  // Το 'playing' event θα κάνει την ενημέρωση του UI.
   try {
     await audio.play();
   } catch (e) {
-    // Απλά καταγράφουμε. Η πραγματική απόφαση γίνεται στο 'error' event.
     console.warn("play() rejected:", e.message || e);
   }
 }
 
-/* ========== SUCCESS: όταν πραγματικά αρχίζει να παίζει ========== */
 audio.addEventListener('playing', () => {
   if (isIntroActive) return;
 
@@ -868,11 +857,9 @@ audio.addEventListener('playing', () => {
     : "ON AIR Radio Garifalo (Backup)";
   statusEl.className = isLive ? "onair" : "offair";
 
-  // Παίρνουμε τίτλο λίγο μετά
   setTimeout(() => { fetchTitle(); }, 1500);
 });
 
-/* ========== FAILURE handlers (μοναδικό σημείο απόφασης) ========== */
 audio.addEventListener('error', () => {
   if (isIntroActive) {
     finishIntroAndStartLive();
@@ -883,7 +870,6 @@ audio.addEventListener('error', () => {
     console.log("Live stream failed → μετάβαση σε Backup...");
     playStream(STREAMS.backup.streamUrl, false);
   } else {
-    // Ήδη είμαστε σε backup και απέτυχε
     loadingModal.style.display = "none";
     statusEl.textContent = "Offline";
     statusEl.className = "offair";
@@ -903,7 +889,6 @@ audio.addEventListener('ended', () => {
     console.log("Live stream ended → μετάβαση σε Backup...");
     playStream(STREAMS.backup.streamUrl, false);
   } else {
-    // Backup τελείωσε (σπάνιο σε live stream) → Offline
     loadingModal.style.display = "none";
     statusEl.textContent = "Offline";
     statusEl.className = "offair";
@@ -913,7 +898,6 @@ audio.addEventListener('ended', () => {
   }
 });
 
-/* ========== INTRO LOGIC ========== */
 function resizeIntro() {
   const overlay = document.getElementById("startOverlay");
   const content = document.querySelector(".intro-content");
@@ -937,7 +921,6 @@ function resizeIntro() {
 function closeIntro() {
   const startOverlay = document.getElementById("startOverlay");
   startOverlay.classList.add("hide");
-  // Εμφάνισε τον κανονικό player
   document.getElementById('visualizerCircle').classList.remove('player-hidden');
   document.getElementById('playBtn').classList.remove('player-hidden');
   document.getElementById('status').classList.remove('player-hidden');
@@ -965,7 +948,6 @@ function startIntroFromFancy() {
   introProgressWrapper.style.display = "block";
   skipIntroBtn.style.display = "block";
   setTimeout(resizeIntro, 20);
-  // setupAudioNodes() ΔΕΝ καλείται εδώ (για να μην βγαίνει η κόκκινη γραμμή)
   const playPromise = introAudio.play();
   if (playPromise !== undefined) {
     playPromise.catch(function (error) {
@@ -982,7 +964,7 @@ function finishIntroAndStartLive() {
   isIntroActive = false;
   closeIntro();
   
-  setupAudioNodes();          // ξεκινάει τώρα το visualizer
+  setupAudioNodes();
   playStream(STREAMS.live.streamUrl, true);
   isPlaying = true;
   btn.textContent = "Pause";
@@ -1032,7 +1014,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-/* ========== ΥΠΟΛΟΙΠΟ PLAYER ========== */
 let rotation = 0;
 function rotateButton(){
   if(isPlaying){
@@ -1096,6 +1077,20 @@ function startButtonBreath(){
   }
   requestAnimationFrame(step);
 }
+
+// === ΠΡΟΣΘΗΚΗ: Listener για έλεγχο έντασης από το κύριο παράθυρο (chat) ===
+window.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'SET_RADIO_VOLUME') {
+    var targetVolume = parseFloat(event.data.volume);
+    if (!isNaN(targetVolume) && targetVolume >= 0 && targetVolume <= 1) {
+      audio.volume = targetVolume;
+      var slider = document.getElementById('volumeSlider');
+      var valueText = document.getElementById('volumeValue');
+      if (slider) slider.value = targetVolume * 100;
+      if (valueText) valueText.textContent = Math.round(targetVolume * 100) + '%';
+    }
+  }
+});
 </script>
 </body>
 </html>
